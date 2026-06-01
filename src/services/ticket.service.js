@@ -8,6 +8,12 @@ exports.findManyTickets = async (whereClause) => {
       user: true,
       sourceDepartment: true,
       targetDepartment: true,
+      comments: {
+        select: {
+          message: true,
+          createdAt: true
+        }
+      }
     },
     orderBy: { createdAt: "desc" },
   });
@@ -20,6 +26,12 @@ exports.findAllTickets = async () => {
       user: true,
       sourceDepartment: true,
       targetDepartment: true,
+      comments: {
+        select: {
+          message: true,
+          createdAt: true
+        }
+      }
     },
     orderBy: { createdAt: "desc" },
   });

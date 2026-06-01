@@ -173,7 +173,7 @@ exports.createTicket = async (req, res) => {
       slaDueDate: computedSlaDueDate,
       attachmentUrl: attachmentUrl || null,
       userId: user.id,
-      status: (category === "ACCESS" || category === "HARDWARE") ? "PENDING_APPROVAL" : "NEW",
+      status: "NEW",
       sourceDepartmentId: sourceDepartmentId || user.departmentId || null,
       targetDepartmentId: targetDepartmentId || null,
     });
@@ -643,7 +643,7 @@ exports.updateStatus = async (req, res) => {
       ));
 
     if (approvalAction) {
-      if (existingTicket.status !== "PENDING_APPROVAL" && existingTicket.status !== "NEW") {
+      if (existingTicket.status !== "PENDING_APPROVAL") {
         return res.status(400).json({
           status: "error",
           message: "Ticket นี้ไม่อยู่ในขั้นตอนที่ต้องอนุมัติ"

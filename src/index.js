@@ -47,7 +47,7 @@ app.use('/api/upload', uploadRoute);
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to the Ticket System API',
-    docs: `10.55.5.150:${PORT}/api-docs`
+    docs: `172.25.192.1:${PORT}/api-docs`
   });
 });
 
@@ -60,6 +60,6 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`[Server] Running on 10.55.5.150:${PORT}`);
-  console.log(`[Docs] Swagger UI ready at 10.55.5.150:${PORT}/api-docs`);
+  console.log(`[Server] Running on 172.25.192.1:${PORT}`);
+  console.log(`[Docs] Swagger UI ready at 172.25.192.1:${PORT}/api-docs`);
 });

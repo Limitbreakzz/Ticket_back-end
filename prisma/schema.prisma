@@ -1,0 +1,163 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  code      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  sourceTickets  Ticket[]         @relation("TicketSourceDepartment")
+  targetTickets  Ticket[]         @relation("TicketTargetDepartment")
+  transfersFrom  TicketTransfer[]  @relation("TransferFromDepartment")
+  transfersTo    TicketTransfer[]  @relation("TransferToDepartment")
+}
+
+enum Role {
+  USER
+  ADMIN
+  MANAGER
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String?  @unique
+  name         String
+  password     String?
+  role         Role     @default(USER)
+  avatarUrl    String?  @db.LongText
+  departmentId String?
+  createdAt    DateTime @default(now())
+
+  department       Department?     @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  ticketsCreated   Ticket[]        @relation("UserTickets")
+  ticketsAssigned  Ticket[]        @relation("AgentTickets")
+  ticketsReceivedManager Ticket[]  @relation("ReceiverManagerTickets")
+  comments         Comment[]
+  transfersCreated TicketTransfer[] @relation("TransferRequestedBy")
+  notifications    Notification[]
+  attachments      Attachment[]
+}
+
+model Ticket {
+  id                 String   @id @default(uuid())
+  title              String
+  description        String   @db.Text
+  status             String   @default("NEW")    // "NEW", "IN_PROGRESS", "RESOLVED", "CANCELLED"
+  priority           String   @default("MEDIUM") // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+  category           String   // "HARDWARE", "SOFTWARE", "NETWORK", "ACCESS", "OTHER"
+  subcategory        String?
+  slaDueDate         DateTime?
+  resolvedAt         DateTime?
+  attachmentUrl      String?  @db.LongText
+  sourceDepartmentId String?
+  targetDepartmentId String?
+  receiverManagerId  String?
+
+  userId String
+  user   User   @relation("UserTickets", fields: [userId], references: [id])
+
+  agentId String?
+  agent   User?  @relation("AgentTickets", fields: [agentId], references: [id])
+
+  receiverManager User? @relation("ReceiverManagerTickets", fields: [receiverManagerId], references: [id], onDelete: SetNull)
+
+  sourceDepartment Department? @relation("TicketSourceDepartment", fields: [sourceDepartmentId], references: [id], onDelete: SetNull)
+  targetDepartment Department? @relation("TicketTargetDepartment", fields: [targetDepartmentId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  comments    Comment[]
+  transfers   TicketTransfer[]
+  attachments Attachment[]
+
+  @@index([status])
+  @@index([priority])
+  @@index([userId])
+  @@index([agentId])
+  @@index([createdAt])
+  @@index([sourceDepartmentId])
+  @@index([targetDepartmentId])
+  @@index([receiverManagerId])
+}
+
+model TicketTransfer {
+  id              String   @id @default(uuid())
+  ticketId        String
+  fromDepartmentId String?
+  toDepartmentId   String?
+  requestedById   String
+  status          String   @default("PENDING") // "PENDING", "ACCEPTED", "REJECTED", "COMPLETED"
+  note            String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  ticket         Ticket      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  fromDepartment  Department? @relation("TransferFromDepartment", fields: [fromDepartmentId], references: [id], onDelete: SetNull)
+  toDepartment    Department? @relation("TransferToDepartment", references: [id], fields: [toDepartmentId], onDelete: SetNull)
+  requestedBy     User        @relation("TransferRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+}
+
+model Comment {
+  id            String   @id @default(uuid())
+  ticketId      String
+  ticket        Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  message       String   @db.Text
+  attachmentUrl String?  @db.LongText
+  isEdited      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime? @updatedAt
+  readAt        DateTime?
+}
+
+model WebhookConfig {
+  id                  String   @id @default(uuid())
+  name                String
+  url                 String
+  targetDepartment    String   @default("all")
+  allowPrivateTickets Boolean  @default(false)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @default(now()) @updatedAt
+}
+
+
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String   @db.Text
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+  fileName  String
+  fileType  String
+  fileUrl   String   @db.LongText
+  userId    String?
+  ticketId  String?
+  createdAt DateTime @default(now())
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ticket Ticket? @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+}
+

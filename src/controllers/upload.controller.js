@@ -1,4 +1,12 @@
 const prisma = require('../prisma');
+const cloudinary = require('cloudinary').v2;
+const fs = require('fs');
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 exports.uploadFile = async (req, res) => {
   try {
@@ -9,7 +17,20 @@ exports.uploadFile = async (req, res) => {
       });
     }
 
-    const fileUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: 'ticket_hub',
+      resource_type: 'auto'
+    });
+
+    // Delete local temp file
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (err) {
+      console.warn("Could not delete local temp file:", err);
+    }
+
+    const fileUrl = result.secure_url;
     const user = req.user;
 
     // Save metadata to Attachment table
@@ -34,6 +55,14 @@ exports.uploadFile = async (req, res) => {
     });
   } catch (error) {
     console.error("Error uploading file:", error);
+    // Cleanup temp file in case of error
+    if (req.file && req.file.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {
+        // ignore
+      }
+    }
     res.status(500).json({
       status: "error",
       message: "Internal server error"

@@ -3,8 +3,6 @@ const cors = require('cors');
 require('dotenv').config();
 const http = require('http');
 const socketService = require('./services/socket.service');
-const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = require('../swagger-output.json');
 
 const path = require('path');
 const morgan = require('morgan');
@@ -48,15 +46,6 @@ const loginLimiter = rateLimit({
   skipSuccessfulRequests: true, 
 });
 
-const swaggerOptions = {
-  swaggerOptions: {
-    docExpansion: 'list', // ขยายแท็บเพื่อแสดง API ทั้งหมดโดยอัตโนมัติ
-    filter: false          // ปิดช่องค้นหา/กรองข้อมูล API
-  }
-};
-
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
-
 app.use(authMiddleware);
 
 
@@ -70,10 +59,8 @@ app.use('/api/users', userRoute);
 app.use('/api/upload', uploadRoute);
 
 app.get('/', (req, res) => {
-  const host = req.headers.host || `localhost:${PORT}`;
   res.json({
-    message: 'Welcome to the Ticket System API',
-    swagger: `http://${host}/api-docs`
+    message: 'Welcome to the Ticket System API'
   });
 });
 

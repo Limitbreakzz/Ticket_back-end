@@ -103,66 +103,93 @@ async function dispatchWebhook(url, payload) {
     if (isDiscordWebhook(url)) {
       const discordBody = buildDiscordBody(payload);
 
-      // Handle image data for Discord attachments (either base64 string or local server file)
+      // Handle image data for Discord attachments (supports multiple comma-separated URLs)
       const base64Regex = /^data:(image\/[a-zA-Z+.-]+);base64,(.+)$/;
-      let attachmentBuffer = null;
-      let attachmentFileName = null;
-      let attachmentMimeType = null;
+      const attachmentFiles = [];
+      const directImageUrls = [];
 
       if (payload.imageUrl) {
-        if (base64Regex.test(payload.imageUrl)) {
-          const match = payload.imageUrl.match(base64Regex);
-          if (match) {
-            attachmentMimeType = match[1];
-            const base64Data = match[2];
-            attachmentBuffer = Buffer.from(base64Data, "base64");
-            
-            let ext = "png";
-            if (attachmentMimeType.includes("jpeg") || attachmentMimeType.includes("jpg")) ext = "jpg";
-            else if (attachmentMimeType.includes("gif")) ext = "gif";
-            else if (attachmentMimeType.includes("webp")) ext = "webp";
+        const urlList = typeof payload.imageUrl === 'string' && payload.imageUrl.includes(',')
+          ? payload.imageUrl.split(',').map(s => s.trim()).filter(Boolean)
+          : [payload.imageUrl];
 
-            attachmentFileName = `ticket_image.${ext}`;
-          }
-        } else {
-          // Check if it's a local/localhost server image URL
-          const imagesMatch = payload.imageUrl.match(/\/images\/([^/]+)$/);
-          if (imagesMatch) {
-            const fs = require('fs');
-            const path = require('path');
-            const filename = decodeURIComponent(imagesMatch[1]);
-            const filePath = path.join(__dirname, '../../images', filename);
-            if (fs.existsSync(filePath)) {
-              attachmentBuffer = fs.readFileSync(filePath);
-              attachmentFileName = filename;
+        const fs = require('fs');
+        const path = require('path');
+
+        urlList.forEach((imgUrl, idx) => {
+          let attachmentBuffer = null;
+          let attachmentFileName = null;
+          let attachmentMimeType = null;
+
+          if (base64Regex.test(imgUrl)) {
+            const match = imgUrl.match(base64Regex);
+            if (match) {
+              attachmentMimeType = match[1];
+              const base64Data = match[2];
+              attachmentBuffer = Buffer.from(base64Data, "base64");
               
-              // Determine mime type from extension
-              const ext = filename.split('.').pop().toLowerCase();
-              if (['jpg', 'jpeg'].includes(ext)) attachmentMimeType = 'image/jpeg';
-              else if (ext === 'gif') attachmentMimeType = 'image/gif';
-              else if (ext === 'webp') attachmentMimeType = 'image/webp';
-              else attachmentMimeType = 'image/png';
+              let ext = "png";
+              if (attachmentMimeType.includes("jpeg") || attachmentMimeType.includes("jpg")) ext = "jpg";
+              else if (attachmentMimeType.includes("gif")) ext = "gif";
+              else if (attachmentMimeType.includes("webp")) ext = "webp";
+
+              attachmentFileName = `ticket_image_${idx + 1}.${ext}`;
+            }
+          } else if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+            // Online hosted URL (Cloudinary / S3 / External Server)
+            directImageUrls.push(imgUrl);
+          } else {
+            // Check if it's a local server image URL
+            const imagesMatch = imgUrl.match(/\/images\/([^/]+)$/);
+            if (imagesMatch) {
+              const filename = decodeURIComponent(imagesMatch[1]);
+              const filePath = path.join(__dirname, '../../images', filename);
+              if (fs.existsSync(filePath)) {
+                attachmentBuffer = fs.readFileSync(filePath);
+                attachmentFileName = filename;
+                
+                const ext = filename.split('.').pop().toLowerCase();
+                if (['jpg', 'jpeg'].includes(ext)) attachmentMimeType = 'image/jpeg';
+                else if (ext === 'gif') attachmentMimeType = 'image/gif';
+                else if (ext === 'webp') attachmentMimeType = 'image/webp';
+                else attachmentMimeType = 'image/png';
+              }
             }
           }
-        }
+
+          if (attachmentBuffer && attachmentFileName && attachmentMimeType) {
+            attachmentFiles.push({
+              buffer: attachmentBuffer,
+              fileName: attachmentFileName,
+              mimeType: attachmentMimeType
+            });
+          }
+        });
       }
 
-      if (attachmentBuffer && attachmentFileName && attachmentMimeType) {
-        // Reference attached image within the Discord embed
+      if (attachmentFiles.length > 0) {
+        // Main embed picture uses the 1st attachment
         if (discordBody.embeds && discordBody.embeds[0]) {
-          discordBody.embeds[0].image = { url: `attachment://${attachmentFileName}` };
-          // Prioritize large preview image over thumbnail representation
+          discordBody.embeds[0].image = { url: `attachment://${attachmentFiles[0].fileName}` };
           delete discordBody.embeds[0].thumbnail;
         }
 
         const formData = new FormData();
         formData.append("payload_json", JSON.stringify(discordBody));
 
-        const blob = new Blob([attachmentBuffer], { type: attachmentMimeType });
-        formData.append("files[0]", blob, attachmentFileName);
+        attachmentFiles.forEach((fileItem, index) => {
+          const blob = new Blob([fileItem.buffer], { type: fileItem.mimeType });
+          formData.append(`files[${index}]`, blob, fileItem.fileName);
+        });
 
         body = formData;
         isMultipart = true;
+      } else if (directImageUrls.length > 0) {
+        // Online image URL (Cloudinary / Public HTTPS URL)
+        if (discordBody.embeds && discordBody.embeds[0]) {
+          discordBody.embeds[0].image = { url: directImageUrls[0] };
+          delete discordBody.embeds[0].thumbnail;
+        }
       }
 
       if (!isMultipart) {

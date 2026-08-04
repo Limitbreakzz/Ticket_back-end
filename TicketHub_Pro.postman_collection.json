@@ -1,67 +1,45 @@
 {
   "info": {
-    "name": "TicketHub Pro API v1.0",
-    "_postman_id": "tickethub-pro-v1-improved",
-    "description": "# TicketHub Pro API **Version**: v1.0 — JWT Bearer Token Authentication **Base URL**: `{{baseUrl}}` **Auth**: Bearer Token (stored in collection variable after login) --- ## Quick Start 1. เลือก Environment ที่ต้องการ (Development / Staging) 2. Run **POST Login** — token จะ save อัตโมัติ 3. ทุก request จะใช้ `{{token}}` โดยอัตโมัติ --- ## Roles - `USER` — สร้างและติดตาม Ticket ของตัวเอง - `MANAGER` — อุมัติ / รับมอบหมาย / Private Ticket - `ADMIN` — จัดการ Users, Departments, Webhooks, Analytics --- ## ️ Notes - Token หมดอายุใ **24 ชั่วโมง** — Login ใหม่เพื่อรับ Token - Endpoints ที่ระบุ `(ADMIN only)` ต้องใช้บัญชี ADMIN - `{{ticketId}}`, `{{userId}}`, `{{deptId}}` จะถูก save อัตโมัติหลัง request แรก",
+    "name": "TicketHub Pro API v1.0 (Simple)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:4000/api",
-      "type": "string",
-      "description": "API Base URL — เปลี่ยตาม environment"
+      "value": "https://ticket-back-end-42ty.onrender.com/api",
+      "type": "string"
     },
     {
       "key": "token",
       "value": "",
-      "type": "string",
-      "description": "JWT Access Token — auto-set หลัง Login"
+      "type": "string"
     },
     {
       "key": "ticketId",
       "value": "",
-      "type": "string",
-      "description": "Ticket ID — auto-set หลัง Create/Get Ticket"
-    },
-    {
-      "key": "userId",
-      "value": "",
-      "type": "string",
-      "description": "User ID — auto-set หลัง Get Users"
-    },
-    {
-      "key": "deptId",
-      "value": "",
-      "type": "string",
-      "description": "Department ID — auto-set หลัง Get Departments"
-    },
-    {
-      "key": "webhookId",
-      "value": "",
-      "type": "string",
-      "description": "Webhook ID — auto-set หลัง Get Webhooks"
-    },
-    {
-      "key": "notifId",
-      "value": "",
-      "type": "string",
-      "description": "Notification ID — auto-set หลัง Get Notifications"
-    },
-    {
-      "key": "commentId",
-      "value": "",
-      "type": "string",
-      "description": "Comment ID — auto-set หลัง Add Comment"
+      "type": "string"
     }
   ],
   "item": [
     {
       "name": "Authentication",
-      "description": "JWT-based authentication endpoints Login ก่อเสมอ — token จะถูก save ลง `{{token}}` อัตโมัติ",
       "item": [
         {
           "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const responseJson = pm.response.json();",
+                  "if (responseJson && responseJson.data && responseJson.data.token) {",
+                  "    pm.collectionVariables.set(\"token\", responseJson.data.token);",
+                  "}"
+                ],
+                "type": "javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -72,12 +50,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password123\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n  \"username\": \"employee\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -88,109 +61,54 @@
                 "auth",
                 "login"
               ]
-            },
-            "description": "**Login และรับ JWT Token** Token จะถูก save ลง `{{token}}` อัตโมัติ **Rate Limit**: 15 attempts / 15 minutes **Test Credentials**: - Admin: `admin` / `password123` - Manager: `manager` / `password123` - Employee: `employee` / `password123` **Response**: `{ status, data: { id, email, username, name, role, token } }`"
-          },
-          "response": []
+            }
+          }
         },
         {
           "name": "Get Current User",
           "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/auth/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "me"
-              ]
-            },
-            "description": "**ดึงข้อมูล Profile ของผู้ใช้ปัจจุบั** จาก JWT Token Auth Required: Bearer Token"
-          }
-        },
-        {
-          "name": "Update Profile",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"ชื่อที่อัปเดตใหม่\",\n  \"avatarUrl\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
                 }
-              }
+              ]
             },
+            "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/auth/me",
+              "raw": "{{baseUrl}}/users/me",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "auth",
+                "users",
                 "me"
               ]
-            },
-            "description": "**แก้ไข name และ avatarUrl** ของผู้ใช้ปัจจุบัน Auth Required: Bearer Token"
-          }
-        },
-        {
-          "name": "Logout",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/auth/logout",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "logout"
-              ]
-            },
-            "description": "**Logout** — เคลียร์ token ออกจาก collection variables ℹ️ JWT เป็ stateless — server ไม่มี session ให้ลบ client ต้องลบ token เอง Auth Required: Bearer Token"
+            }
           }
         }
       ]
     },
     {
       "name": "Tickets",
-      "description": "Ticket management endpoints **Access Control by Role**: - `USER` — เห็เฉพาะ Ticket ที่ตัวเองสร้าง - `MANAGER` — เห็ Ticket ของแผกตัวเอง - `ADMIN` — เห็ Ticket ทั้งหมด",
       "item": [
         {
-          "name": "Get All Tickets",
+          "name": "Get My Tickets",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
             "url": {
               "raw": "{{baseUrl}}/tickets",
               "host": [
@@ -199,485 +117,23 @@
               "path": [
                 "tickets"
               ]
-            },
-            "description": "**ดึง Tickets ทั้งหมด** ตามสิทธิ์ของ user **Role-based filtering**: - `USER` → เฉพาะ tickets ของตัวเอง - `MANAGER` → tickets ของแผก + ที่รับมอบหมาย - `ADMIN` → ทุก ticket ใระบบ Auth Required: Bearer Token"
+            }
           }
         },
         {
-          "name": "Ticket By ID",
+          "name": "Get Departments",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tickets/{{ticketId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tickets",
-                "{{ticketId}}"
-              ]
-            },
-            "description": "**ดึง Ticket ตาม ID** **Path Parameter**: `ticketId` — auto-set จาก Get All Tickets Auth Required: Bearer Token"
-          }
-        },
-        {
-          "name": "Ticket Detail",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tickets/{{ticketId}}/data",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tickets",
-                "{{ticketId}}",
-                "data"
-              ]
-            },
-            "description": "**ดึงรายละเอียด Ticket พร้อม Comments และ Timeline** Response รวม: - `ticket` — ข้อมูล ticket ครบถ้ว + SLA - `comments` — ทุก comment รวม system logs Auth Required: Bearer Token"
-          }
-        },
-        {
-          "name": "Chat Updates",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tickets/{{ticketId}}/chat-updates",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tickets",
-                "{{ticketId}}",
-                "chat-updates"
-              ]
-            },
-            "description": "**Real-time Polling** — ดึง comments ล่าสุดและสถาะ ticket ใช้สำหรับ frontend polling ทุก N วิาที เพื่ออัปเดต chat Auth Required: Bearer Token"
-          }
-        },
-        {
-          "name": "Create Ticket",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"คอมพิวเตอร์เปิดไม่ติด\",\n  \"description\": \"เครื่องดับกะทัหั ไม่สามารถเปิดใหม่ได้ ไฟสัญญาณไม่ขึ้\",\n  \"category\": \"HARDWARE\",\n  \"subcategory\": \"computer_laptop\",\n  \"priority\": \"HIGH\",\n  \"targetDepartmentId\": \"{{deptId}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/tickets",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tickets"
-              ]
-            },
-            "description": "**สร้าง Ticket ใหม่** ส่งไปยัง Department **Required Fields**: `title`, `category` **category enum**: `HARDWARE` `SOFTWARE` `NETWORK` `ACCESS` `OTHER` **priority enum**: `LOW` `MEDIUM` `HIGH` `CRITICAL` **subcategory enum** (ตัวอย่าง): `computer_laptop` `monitor` `printer_scanner` `accessory` `hardware_other` `os_system` `office_apps` `internal_systems` `install_update` `software_other` `wifi_issue` `lan_issue` `vpn_remote` `slow_network` `network_other` `password_reset` `shared_folder` `license_request` `keycard_building` `access_other` `desk_chair` `stationery` `intern_coord` `consultation` `other_general` Auth Required: Bearer Token (any role)"
-          }
-        },
-        {
-          "name": "Create Private Ticket (MANAGER→MANAGER)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"เรื่องส่วตัว Manager-to-Manager\",\n  \"description\": \"เรื่องที่ต้องการส่งตรงถึง Manager อีกค (ไม่ผ่าแผก)\",\n  \"category\": \"OTHER\",\n  \"priority\": \"MEDIUM\",\n  \"receiverManagerId\": \"{{userId}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/tickets",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tickets"
-              ]
-            },
-            "description": "**สร้าง Private Ticket** ส่งตรงถึง Manager คอื่ ️ **MANAGER role เท่าั้** **ข้อกำหด**: - Sender ต้องเป็ `MANAGER` - `receiverManagerId` ต้องเป็ user ที่มี role `MANAGER` - Ticket จะ **ไม่ปรากฏ** ใ department tickets Auth Required: Bearer Token (MANAGER only)"
-          }
-        },
-        {
-          "name": "Add Comment",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"message\": \"ขอบคุณสำหรับการตอบกลับ จะรอดำเิการต่อ\",\n  \"isInternal\": false\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/tickets/{{ticketId}}/comments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tickets",
-                "{{ticketId}}",
-                "comments"
-              ]
-            },
-            "description": "**เพิ่ม Comment** ใ Ticket **isInternal**: - `false` — ข้อความสาธารณะ (ทุกคเห็) - `true` — หมายเหตุ ายใ Agent/Admin เท่าั้ ️ ไม่สามารถ comment ใ Ticket ที่ `CANCELLED` หรือ `CLOSED` Auth Required: Bearer Token"
-          }
-        },
-        {
-          "name": "Update Ticket Status",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"IN_PROGRESS\",\n  \"approvalNote\": \"รับทราบและเริ่มดำเิการแล้ว\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/tickets/{{ticketId}}/status",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tickets",
-                "{{ticketId}}",
-                "status"
-              ]
-            },
-            "description": "**อัปเดตสถาะ Ticket** ️ *Note: Method ควรเป็ PATCH ตามมาตรฐา REST แต่ Backend ปัจจุบัใช้ POST* **status enum**: | Value | ความหมาย | |-------|----------| | `NEW` | รอดำเิการ | | `IN_PROGRESS` | กำลังดำเิการ | | `PENDING_APPROVAL` | รออุมัติ | | `APPROVED` | อุมัติแล้ว | | `REJECTED` | ปฏิเสธ | | `FORWARDED` | ส่งต่อแผก | | `WAITING_PARTS` | รออะไหล่ | | `RESOLVED` | เสร็จสิ้ | | `CLOSED` | ปิดถาวร | | `CANCELLED` | ยกเลิก (เฉพาะ creator) | Auth Required: Bearer Token"
-          }
-        },
-        {
-          "name": "Approve Ticket",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"approvalAction\": \"APPROVE\",\n  \"approvalNote\": \"อุมัติคำขอเรียบร้อย\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/tickets/{{ticketId}}/status",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tickets",
-                "{{ticketId}}",
-                "status"
-              ]
-            },
-            "description": "**อุมัติ Ticket** (MANAGER / ADMIN) **approvalAction**: `APPROVE` หลังอุมัติ status จะเปลี่ยเป็ `APPROVED` → `IN_PROGRESS` อัตโมัติ Auth Required: Bearer Token (MANAGER / ADMIN)"
-          }
-        },
-        {
-          "name": "Reject Ticket",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"approvalAction\": \"REJECT\",\n  \"approvalNote\": \"ไม่อุมัติเื่องจากข้อมูลไม่ครบถ้ว กรุณาแบเอกสารเพิ่มเติม\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/tickets/{{ticketId}}/status",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tickets",
-                "{{ticketId}}",
-                "status"
-              ]
-            },
-            "description": "**ปฏิเสธ Ticket** (MANAGER / ADMIN) **approvalAction**: `REJECT` Auth Required: Bearer Token (MANAGER / ADMIN)"
-          }
-        },
-        {
-          "name": "Assign Ticket",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"agentId\": \"{{userId}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/tickets/{{ticketId}}/assign",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tickets",
-                "{{ticketId}}",
-                "assign"
-              ]
-            },
-            "description": "**มอบหมาย Ticket ให้ Agent** หรือกด self-assign ️ *Note: Method ควรเป็ PATCH ตามมาตรฐา REST แต่ Backend ปัจจุบัใช้ POST* Auth Required: Bearer Token"
-          }
-        },
-        {
-          "name": "Transfer Ticket",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"toDepartmentId\": \"{{deptId}}\",\n  \"note\": \"ส่งต่อไปยังแผกที่รับผิดชอบโดยตรง\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/tickets/{{ticketId}}/transfer",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tickets",
-                "{{ticketId}}",
-                "transfer"
-              ]
-            },
-            "description": "**ส่งต่อ Ticket** ไปยัง Department อื่ ️ *Note: Method ควรเป็ PATCH ตามมาตรฐา REST แต่ Backend ปัจจุบัใช้ POST* Auth Required: Bearer Token"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Notifications",
-      "item": [
-        {
-          "name": "Get All Notifications",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/notifications",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "notifications"
-              ]
-            },
-            "description": "**ดึงการแจ้งเตือทั้งหมด** ของผู้ใช้ปัจจุบั Auth Required: Bearer Token"
-          }
-        },
-        {
-          "name": "Mark Notification Read",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"id\": \"{{notifId}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/notifications",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "notifications"
-              ]
-            },
-            "description": "**อ่าการแจ้งเตือตาม ID** ️ *Note: Method ควรเป็ PATCH (partial update) แต่ Backend ปัจจุบัใช้ PUT* Auth Required: Bearer Token"
-          }
-        },
-        {
-          "name": "Mark All Notifications Read",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/notifications",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "notifications"
-              ]
-            },
-            "description": "**อ่าการแจ้งเตือทั้งหมด** (ส่ง body ว่าง `{}`) Auth Required: Bearer Token"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Departments",
-      "item": [
-        {
-          "name": "Get All Departments",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
             "url": {
               "raw": "{{baseUrl}}/departments",
               "host": [
@@ -690,506 +146,116 @@
           }
         },
         {
-          "name": "Department By ID",
+          "name": "Create Ticket",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const responseJson = pm.response.json();",
+                  "if (responseJson && responseJson.data && responseJson.data.id) {",
+                  "    pm.collectionVariables.set(\"ticketId\", responseJson.data.id);",
+                  "}"
+                ],
+                "type": "javascript"
+              }
+            }
+          ],
           "request": {
-            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
+                "key": "Content-Type",
+                "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"แจ้งซ่อมเครื่องพิมพ์\",\n  \"description\": \"เครื่องพิมพ์แผนกคลังสินค้าพิมพ์ไม่ออก ไฟสีส้มกระพริบ\",\n  \"category\": \"HARDWARE\",\n  \"priority\": \"MEDIUM\",\n  \"targetDepartmentId\": null\n}"
+            },
             "url": {
-              "raw": "{{baseUrl}}/departments/{{deptId}}",
+              "raw": "{{baseUrl}}/tickets",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "departments",
-                "{{deptId}}"
+                "tickets"
               ]
             }
           }
-        }
-      ]
-    },
-    {
-      "name": "Users",
-      "item": [
-        {
-          "name": "Get All Users",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users"
-              ]
-            },
-            "description": "**ดึง Users ทั้งหมด** `{{userId}}` จะถูก auto-set เป็ Manager คแรกที่พบ Auth Required: Bearer Token"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Admin",
-      "description": "Admin-only endpoints **ADMIN role เท่าั้** — request อื่จะได้รับ 403 Forbidden",
-      "item": [
-        {
-          "name": "Get Analytics Dashboard",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/analytics",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "analytics"
-              ]
-            },
-            "description": "**Dashboard Analytics** — ข้อมูลสถิติ Ticket ทั้งหมด Auth Required: Bearer Token **(ADMIN only)**"
-          }
         },
         {
-          "name": "Get All Users",
+          "name": "Get Ticket Detail",
           "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "users"
-              ]
-            },
-            "description": "Auth Required: Bearer Token **(ADMIN only)**"
-          }
-        },
-        {
-          "name": "Create User",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"newuser01\",\n  \"password\": \"password123\",\n  \"name\": \"พักงาใหม่\",\n  \"email\": \"newuser01@company.com\",\n  \"role\": \"USER\",\n  \"departmentId\": \"{{deptId}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "users"
-              ]
-            },
-            "description": "**สร้าง User ใหม่** **role enum**: `USER` `MANAGER` `ADMIN` Auth Required: Bearer Token **(ADMIN only)**"
-          }
-        },
-        {
-          "name": "Update User",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"ชื่อที่แก้ไขแล้ว\",\n  \"role\": \"MANAGER\",\n  \"departmentId\": \"{{deptId}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/users/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "users",
-                "{{userId}}"
-              ]
-            },
-            "description": "Auth Required: Bearer Token **(ADMIN only)**"
-          }
-        },
-        {
-          "name": "User",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/users/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "users",
-                "{{userId}}"
-              ]
-            },
-            "description": "️ **Destructive action** — ลบ User ถาวร Auth Required: Bearer Token **(ADMIN only)**"
-          }
-        },
-        {
-          "name": "Get All Departments",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/departments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "departments"
-              ]
-            },
-            "description": "Auth Required: Bearer Token **(ADMIN only)**"
-          }
-        },
-        {
-          "name": "Create Department",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"แผกใหม่\",\n  \"code\": \"NEW01\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/departments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "departments"
-              ]
-            },
-            "description": "Auth Required: Bearer Token **(ADMIN only)**"
-          }
-        },
-        {
-          "name": "Update Department",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"ชื่อแผกที่แก้ไขแล้ว\",\n  \"code\": \"UPD01\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/departments/{{deptId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "departments",
-                "{{deptId}}"
-              ]
-            },
-            "description": "Auth Required: Bearer Token **(ADMIN only)**"
-          }
-        },
-        {
-          "name": "Department",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/departments/{{deptId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "departments",
-                "{{deptId}}"
-              ]
-            },
-            "description": "️ **Destructive action** — ลบ Department ถาวร Auth Required: Bearer Token **(ADMIN only)**"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Webhooks",
-      "description": "Webhook management for external notifications (e.g., Discord) **ADMIN role เท่าั้**",
-      "item": [
-        {
-          "name": "Get All Webhooks",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/webhooks",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "webhooks"
-              ]
-            },
-            "description": "Auth Required: Bearer Token **(ADMIN only)**"
-          }
-        },
-        {
-          "name": "Create Webhook",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"url\": \"https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN\",\n  \"name\": \"Discord — Ticket Notifications\",\n  \"isActive\": true\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/webhooks",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "webhooks"
-              ]
-            },
-            "description": "**สร้าง Webhook ใหม่** รองรับ Discord webhook URL Auth Required: Bearer Token **(ADMIN only)**"
-          }
-        },
-        {
-          "name": "Update Webhook",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"isActive\": false\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/webhooks/{{webhookId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "webhooks",
-                "{{webhookId}}"
-              ]
-            },
-            "description": "**เปิด/ปิด Webhook** Auth Required: Bearer Token **(ADMIN only)**"
-          }
-        },
-        {
-          "name": "Test Webhook",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/webhooks/{{webhookId}}/test",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "webhooks",
-                "{{webhookId}}",
-                "test"
-              ]
-            },
-            "description": "**ทดสอบส่ง Webhook** ไปยัง URL ปลายทาง Auth Required: Bearer Token **(ADMIN only)**"
-          }
-        },
-        {
-          "name": "Webhook",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/webhooks/{{webhookId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "webhooks",
-                "{{webhookId}}"
-              ]
-            },
-            "description": "Auth Required: Bearer Token **(ADMIN only)**"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Attachments",
-      "description": "File upload endpoint — อัปโหลดไฟล์แบก่อ แล้วำ URL ไปใช้ใ Create Ticket หรือ Add Comment",
-      "item": [
-        {
-          "name": "Upload File",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
+            "auth": {
+              "type": "bearer",
+              "bearer": [
                 {
-                  "key": "file",
-                  "type": "file",
-                  "src": "",
-                  "description": "เลือกไฟล์รูปภาพหรือเอกสาร (jpg, png, pdf)"
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
                 }
               ]
             },
+            "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/upload",
+              "raw": "{{baseUrl}}/tickets/{{ticketId}}/data",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "upload"
+                "tickets",
+                "{{ticketId}}",
+                "data"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Comment to Ticket",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
               ]
             },
-            "description": "**อัปโหลดไฟล์แบ** **ขั้ตอ**: 1. Upload file → ได้ `url` 2. ำ `url` ไปใส่ใ `attachmentUrl` ของ Create Ticket หรือ `attachmentUrl` ของ Add Comment **Supported**: jpg, jpeg, png, gif, pdf, doc, docx Auth Required: Bearer Token"
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"ได้ทำการปิด-เปิดเครื่องใหม่แล้วยังใช้ไม่ได้ครับ\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tickets/{{ticketId}}/comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tickets",
+                "{{ticketId}}",
+                "comments"
+              ]
+            }
           }
         }
       ]

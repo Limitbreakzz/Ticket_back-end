@@ -401,7 +401,7 @@ exports.createTicket = async (req, res) => {
             { name: "หมวดหมู่", value: getCategoryLabel(ticket.category), inline: true },
             { name: "หมวดหมู่ย่อย", value: `🏷️ ${getSubcategoryLabel(ticket.subcategory)}`, inline: true },
             { name: "ระดับความสำคัญ", value: getPriorityLabel(ticket.priority), inline: true },
-            { name: "ลิงก์ Ticket", value: `🔗 [คลิกเพื่อดูรายละเอียด Ticket](${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/tickets/${ticket.id})`, inline: false },
+            { name: "ลิงก์ Ticket", value: `🔗 [คลิกเพื่อดูรายละเอียด Ticket](${process.env.FRONTEND_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://ticket-hub-g6yc.onrender.com"}/tickets/${ticket.id})`, inline: false },
           ],
           imageUrl: ticket.attachmentUrl || undefined,
         });

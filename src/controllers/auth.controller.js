@@ -55,13 +55,19 @@ exports.login = async (req, res) => {
 
           const name = hrUser.displayName || `${hrUser.firstName || ''} ${hrUser.lastName || ''}`.trim() || hrUser.email || username.trim();
 
+          const hrDeptName = hrUser.departmentName 
+            || (typeof hrUser.department === 'string' ? hrUser.department : hrUser.department?.name)
+            || hrUser.department_name 
+            || hrUser.deptName 
+            || hrUser.departmentCode;
+
           // Upsert the external user into local DB (preserve original casing)
           user = await authService.upsertExternalUser(
             username.trim(),
             hrUser.email,
             name,
             localRole,
-            hrUser.departmentName
+            hrDeptName
           );
           hrSuccess = true;
         }

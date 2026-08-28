@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "7b8f9e12-3456-4cde-89ab-0123456789cd",
-    "name": "TicketHub Pro API",
-    "description": "Standard REST API Collection for TicketHub Pro System - จัดหมวดหมู่ตาม Resource มาตรฐานสำหรับการพัฒนา Frontend & Backend Testing",
+    "name": "TicketHub Pro API (Pure ER-Diagram)",
+    "description": "Standard Postman Collection for TicketHub Pro System (Pure ER Schema, Live Render & Local Ready)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -11,7 +11,7 @@
       "description": "API สำหรับการเข้าสู่ระบบ และการตรวจสอบสิทธิ์ของผู้ใช้งาน",
       "item": [
         {
-          "name": "Login - Employee",
+          "name": "Login - Employee (USER)",
           "event": [
             {
               "listen": "test",
@@ -19,7 +19,7 @@
                 "exec": [
                   "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "    const json = pm.response.json();",
-                  "    const token = json.token || json.data?.token;",
+                  "    const token = json.data?.token || json.token;",
                   "    if (token) pm.collectionVariables.set('token', token);",
                   "}"
                 ],
@@ -37,7 +37,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"employee\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"username\": \"emp005\",\n  \"password\": \"123456789\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
@@ -53,7 +53,7 @@
           }
         },
         {
-          "name": "Login - Manager",
+          "name": "Login - Manager (MANAGER)",
           "event": [
             {
               "listen": "test",
@@ -61,7 +61,7 @@
                 "exec": [
                   "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "    const json = pm.response.json();",
-                  "    const token = json.token || json.data?.token;",
+                  "    const token = json.data?.token || json.token;",
                   "    if (token) pm.collectionVariables.set('token', token);",
                   "}"
                 ],
@@ -79,7 +79,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"manager\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"username\": \"emp002\",\n  \"password\": \"123456789\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
@@ -95,7 +95,7 @@
           }
         },
         {
-          "name": "Login - Admin",
+          "name": "Login - Admin (ADMIN)",
           "event": [
             {
               "listen": "test",
@@ -103,7 +103,7 @@
                 "exec": [
                   "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "    const json = pm.response.json();",
-                  "    const token = json.token || json.data?.token;",
+                  "    const token = json.data?.token || json.token;",
                   "    if (token) pm.collectionVariables.set('token', token);",
                   "}"
                 ],
@@ -121,7 +121,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"username\": \"emp001\",\n  \"password\": \"123456789\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
@@ -176,9 +176,8 @@
                   "    const json = pm.response.json();",
                   "    const depts = json.data || json;",
                   "    if (Array.isArray(depts) && depts.length > 0) {",
-                  "        const itDept = depts.find(d => d.code === 'IT' || d.name.includes('IT') || d.name.includes('ไอที'));",
-                  "        if (itDept) pm.collectionVariables.set('departmentId', itDept.id);",
-                  "        else pm.collectionVariables.set('departmentId', depts[0].id);",
+                  "        const target = depts[0];",
+                  "        pm.collectionVariables.set('departmentId', target.dept_id || target.id);",
                   "    }",
                   "}"
                 ],
@@ -205,6 +204,29 @@
               ]
             }
           }
+        },
+        {
+          "name": "Get Department By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/departments/{{departmentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "departments",
+                "{{departmentId}}"
+              ]
+            }
+          }
         }
       ]
     },
@@ -223,7 +245,7 @@
                   "    const json = pm.response.json();",
                   "    const users = json.data || json;",
                   "    if (Array.isArray(users) && users.length > 0) {",
-                  "        pm.collectionVariables.set('userId', users[0].id);",
+                  "        pm.collectionVariables.set('userId', users[0].user_id || users[0].id);",
                   "    }",
                   "}"
                 ],
@@ -325,6 +347,97 @@
           }
         },
         {
+          "name": "Get Pending Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/pending-count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tickets",
+                "pending-count"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Outbox Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/outbox-count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tickets",
+                "outbox-count"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Ticket",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    const id = json.data?.ticket_id || json.data?.id || json.ticket_id || json.id;",
+                  "    if (id) pm.collectionVariables.set('ticketId', id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"เครื่องพิมพ์เอกสารเปิดไม่ติด ฝ่ายผลิต 1\",\n  \"description\": \"กดปุ่มเปิดแล้วไม่มีไฟขึ้น สายไฟเสียบแน่นแล้ว ต้องการใช้งานด่วน\",\n  \"category\": \"HARDWARE\",\n  \"subcategory\": \"printer_issue\",\n  \"priority\": \"HIGH\",\n  \"targetDepartmentId\": \"{{departmentId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tickets"
+              ]
+            }
+          }
+        },
+        {
           "name": "Get Ticket By ID",
           "request": {
             "method": "GET",
@@ -396,51 +509,6 @@
           }
         },
         {
-          "name": "Create Ticket",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200 || pm.response.code === 201) {",
-                  "    const json = pm.response.json();",
-                  "    const id = json.data?.id || json.id;",
-                  "    if (id) pm.collectionVariables.set('ticketId', id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"เครื่องพิมพ์เอกสารเปิดไม่ติด ฝ่ายผลิต 1\",\n  \"description\": \"กดปุ่มเปิดแล้วไม่มีไฟขึ้น สายไฟเสียบแน่นแล้ว ต้องการใช้งานด่วน\",\n  \"category\": \"HARDWARE\",\n  \"subcategory\": \"printer_issue\",\n  \"priority\": \"HIGH\",\n  \"targetDepartmentId\": \"{{departmentId}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "tickets"
-              ]
-            }
-          }
-        },
-        {
           "name": "Update Ticket Status",
           "request": {
             "method": "POST",
@@ -456,7 +524,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"RESOLVED\",\n  \"note\": \"เปลี่ยนฟิวส์และสายไฟใหม่ ทดสอบใช้งานผ่านเรียบร้อย\"\n}"
+              "raw": "{\n  \"status\": \"IN_PROGRESS\",\n  \"approvalNote\": \"รับทราบและเริ่มดำเนินการแก้ไข\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/tickets/{{ticketId}}/status",
@@ -473,7 +541,7 @@
           }
         },
         {
-          "name": "Assign / Claim Ticket",
+          "name": "Assign Ticket",
           "request": {
             "method": "POST",
             "header": [
@@ -488,7 +556,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"action\": \"claim\"\n}"
+              "raw": "{\n  \"agentId\": \"{{userId}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/tickets/{{ticketId}}/assign",
@@ -520,7 +588,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"targetDepartmentId\": \"{{departmentId}}\",\n  \"note\": \"ส่งต่อเคสให้ช่างเทคนิคตรวจสอบระบบไฟ\"\n}"
+              "raw": "{\n  \"toDepartmentId\": \"{{departmentId}}\",\n  \"note\": \"ส่งต่อเคสให้ช่างเทคนิคตรวจสอบระบบไฟ\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/tickets/{{ticketId}}/transfer",
@@ -551,7 +619,7 @@
                 "exec": [
                   "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "    const json = pm.response.json();",
-                  "    const id = json.data?.id || json.id;",
+                  "    const id = json.data?.comment_id || json.data?.id || json.comment_id || json.id;",
                   "    if (id) pm.collectionVariables.set('commentId', id);",
                   "}"
                 ],
@@ -823,7 +891,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:4000",
+      "value": "https://ticket-back-end-42ty.onrender.com",
       "type": "string"
     },
     {

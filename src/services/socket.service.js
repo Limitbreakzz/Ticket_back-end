@@ -46,7 +46,7 @@ exports.init = (server) => {
       }
       const payload = jwt.verify(token, JWT_SECRET);
       const user = await prisma.user.findUnique({
-        where: { id: payload.userId },
+        where: { user_id: payload.userId },
         include: { department: true }
       });
       if (!user) {
@@ -60,7 +60,7 @@ exports.init = (server) => {
   });
 
   io.on('connection', (socket) => {
-    const userId = socket.user.id;
+    const userId = socket.user.user_id;
     const userRole = socket.user.role;
     const ipAddress = socket.handshake.address;
 
@@ -97,7 +97,7 @@ exports.init = (server) => {
 
       try {
         const ticket = await prisma.ticket.findUnique({
-          where: { id: ticketId }
+          where: { ticket_id: ticketId }
         });
 
         if (!ticket) {
@@ -106,11 +106,11 @@ exports.init = (server) => {
         }
 
         // Auth check: Creator, Assigned Agent, Target Manager, Staff (Admin/Manager), or Target Department Member
-        const isCreator = ticket.userId === userId;
-        const isAgent = ticket.agentId === userId;
-        const isReceiver = ticket.receiverManagerId === userId;
+        const isCreator = ticket.user_id === userId;
+        const isAgent = ticket.agent_id === userId;
+        const isReceiver = ticket.manager_id === userId;
         const isStaff = userRole === 'ADMIN' || userRole === 'MANAGER';
-        const isTargetDept = socket.user && socket.user.departmentId && ticket.targetDepartmentId === socket.user.departmentId;
+        const isTargetDept = socket.user && socket.user.dept_id && ticket.tgt_dept_id === socket.user.dept_id;
 
         if (isCreator || isAgent || isReceiver || isStaff || isTargetDept) {
           socket.join(`ticket:${ticketId}`);

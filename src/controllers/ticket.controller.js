@@ -1067,7 +1067,7 @@ exports.transferTicket = async (req, res) => {
     const updatedTicket = await ticketService.updateTicket(ticket.id, {
       targetDepartmentId: toDepartmentId,
       agentId: null,
-      status: "FORWARDED",
+      status: "NEW",
     });
 
     const fromDeptName = ticket.targetDepartment?.name || "แผนกไอทีส่วนกลาง (ไม่มีระบุ)";

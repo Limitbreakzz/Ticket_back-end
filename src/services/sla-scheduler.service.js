@@ -13,13 +13,13 @@ async function checkSLADeadlines() {
     const ticketsNearDeadline = await prisma.ticket.findMany({
       where: {
         status: {
-          notIn: ['RESOLVED', 'CLOSED', 'CANCELLED']
+          notIn: ['RESOLVED', 'CLOSED', 'CANCELLED', 'REJECTED']
         },
-        slaDueDate: {
+        sla_due_date: {
           gt: now,
           lte: warningTimeThreshold
         },
-        agentId: {
+        agent_id: {
           not: null
         }
       },
@@ -29,15 +29,15 @@ async function checkSLADeadlines() {
     });
 
     for (const ticket of ticketsNearDeadline) {
-      if (!ticket.agentId) continue;
+      if (!ticket.agent_id) continue;
 
-      const link = `/tickets/${ticket.id}`;
+      const link = `/tickets/${ticket.ticket_id}`;
       const title = `⏳ เตือนภัย: Ticket ใกล้เกินกำหนดเวลา SLA`;
       
       // Check if we have already sent an SLA warning notification for this ticket to this agent
       const existingNotification = await prisma.notification.findFirst({
         where: {
-          userId: ticket.agentId,
+          user_id: ticket.agent_id,
           link,
           title
         }
@@ -46,12 +46,12 @@ async function checkSLADeadlines() {
       if (!existingNotification) {
         // Send notification to the agent
         await notificationService.createNotification({
-          userId: ticket.agentId,
+          userId: ticket.agent_id,
           title,
-          message: `Ticket "${ticket.title}" ของคุณ เหลือเวลาดำเนินการตาม SLA อีกไม่เกิน 2 ชั่วโมง! (กำหนดส่ง: ${ticket.slaDueDate.toLocaleString('th-TH')})`,
+          message: `Ticket "${ticket.title}" ของคุณ เหลือเวลาดำเนินการตาม SLA อีกไม่เกิน 2 ชั่วโมง! (กำหนดส่ง: ${ticket.sla_due_date ? ticket.sla_due_date.toLocaleString('th-TH') : '-'})`,
           link
         });
-        console.log(`[SLA Scheduler] Sent SLA reminder notification to agent ${ticket.agent.name} for ticket #${ticket.id}`);
+        console.log(`[SLA Scheduler] Sent SLA reminder notification to agent ${ticket.agent ? ticket.agent.name : ''} for ticket #${ticket.ticket_id}`);
       }
     }
   } catch (err) {

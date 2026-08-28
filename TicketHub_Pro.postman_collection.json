@@ -1,42 +1,29 @@
 {
   "info": {
-    "name": "TicketHub Pro API v1.0 (Simple)",
+    "_postman_id": "7b8f9e12-3456-4cde-89ab-0123456789cd",
+    "name": "TicketHub Pro API",
+    "description": "Standard REST API Collection for TicketHub Pro System - จัดหมวดหมู่ตาม Resource มาตรฐานสำหรับการพัฒนา Frontend & Backend Testing",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "https://ticket-back-end-42ty.onrender.com/api",
-      "type": "string"
-    },
-    {
-      "key": "token",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "ticketId",
-      "value": "",
-      "type": "string"
-    }
-  ],
   "item": [
     {
       "name": "Authentication",
+      "description": "API สำหรับการเข้าสู่ระบบ และการตรวจสอบสิทธิ์ของผู้ใช้งาน",
       "item": [
         {
-          "name": "Login",
+          "name": "Login - Employee",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "const responseJson = pm.response.json();",
-                  "if (responseJson && responseJson.data && responseJson.data.token) {",
-                  "    pm.collectionVariables.set(\"token\", responseJson.data.token);",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    const token = json.token || json.data?.token;",
+                  "    if (token) pm.collectionVariables.set('token', token);",
                   "}"
                 ],
-                "type": "javascript"
+                "type": "text/javascript"
               }
             }
           ],
@@ -53,11 +40,12 @@
               "raw": "{\n  \"username\": \"employee\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/login",
+              "raw": "{{baseUrl}}/api/auth/login",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "api",
                 "auth",
                 "login"
               ]
@@ -65,26 +53,107 @@
           }
         },
         {
-          "name": "Get Current User",
+          "name": "Login - Manager",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    const token = json.token || json.data?.token;",
+                  "    if (token) pm.collectionVariables.set('token', token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"manager\",\n  \"password\": \"password123\"\n}"
             },
-            "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/users/me",
+              "raw": "{{baseUrl}}/api/auth/login",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "users",
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login - Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    const token = json.token || json.data?.token;",
+                  "    if (token) pm.collectionVariables.set('token', token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
                 "me"
               ]
             }
@@ -93,54 +162,235 @@
       ]
     },
     {
-      "name": "Tickets",
+      "name": "Departments",
+      "description": "API สำหรับเรียกดูและจัดการรายชื่อแผนก",
       "item": [
         {
-          "name": "Get My Tickets",
+          "name": "Get All Departments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    const depts = json.data || json;",
+                  "    if (Array.isArray(depts) && depts.length > 0) {",
+                  "        const itDept = depts.find(d => d.code === 'IT' || d.name.includes('IT') || d.name.includes('ไอที'));",
+                  "        if (itDept) pm.collectionVariables.set('departmentId', itDept.id);",
+                  "        else pm.collectionVariables.set('departmentId', depts[0].id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/tickets",
+              "raw": "{{baseUrl}}/api/departments",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "tickets"
+                "api",
+                "departments"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "API สำหรับเรียกดูข้อมูลรายชื่อผู้ใช้งาน (MANAGER & ADMIN)",
+      "item": [
+        {
+          "name": "Get All Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    const users = json.data || json;",
+                  "    if (Array.isArray(users) && users.length > 0) {",
+                  "        pm.collectionVariables.set('userId', users[0].id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
               ]
             }
           }
         },
         {
-          "name": "Get Departments",
+          "name": "Get User By ID",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/departments",
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "departments"
+                "api",
+                "users",
+                "{{userId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tickets",
+      "description": "API สำหรับจัดการใบงาน/ตั๋วปัญหา (สร้าง, เรียกดู, แก้ไขสถานะ, มอบหมายงาน)",
+      "item": [
+        {
+          "name": "Get All Tickets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets?status=&priority=&category=&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tickets"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": ""
+                },
+                {
+                  "key": "priority",
+                  "value": ""
+                },
+                {
+                  "key": "category",
+                  "value": ""
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Ticket By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tickets",
+                "{{ticketId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Ticket Detail & Comments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketId}}/data",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tickets",
+                "{{ticketId}}",
+                "data"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Chat Updates (Polling)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketId}}/chat-updates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tickets",
+                "{{ticketId}}",
+                "chat-updates"
               ]
             }
           }
@@ -152,28 +402,23 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "const responseJson = pm.response.json();",
-                  "if (responseJson && responseJson.data && responseJson.data.id) {",
-                  "    pm.collectionVariables.set(\"ticketId\", responseJson.data.id);",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    const id = json.data?.id || json.id;",
+                  "    if (id) pm.collectionVariables.set('ticketId', id);",
                   "}"
                 ],
-                "type": "javascript"
+                "type": "text/javascript"
               }
             }
           ],
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "POST",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -181,61 +426,29 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"แจ้งซ่อมเครื่องพิมพ์\",\n  \"description\": \"เครื่องพิมพ์แผนกคลังสินค้าพิมพ์ไม่ออก ไฟสีส้มกระพริบ\",\n  \"category\": \"HARDWARE\",\n  \"priority\": \"MEDIUM\",\n  \"targetDepartmentId\": null\n}"
+              "raw": "{\n  \"title\": \"เครื่องพิมพ์เอกสารเปิดไม่ติด ฝ่ายผลิต 1\",\n  \"description\": \"กดปุ่มเปิดแล้วไม่มีไฟขึ้น สายไฟเสียบแน่นแล้ว ต้องการใช้งานด่วน\",\n  \"category\": \"HARDWARE\",\n  \"subcategory\": \"printer_issue\",\n  \"priority\": \"HIGH\",\n  \"targetDepartmentId\": \"{{departmentId}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/tickets",
+              "raw": "{{baseUrl}}/api/tickets",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "api",
                 "tickets"
               ]
             }
           }
         },
         {
-          "name": "Get Ticket Detail",
+          "name": "Update Ticket Status",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/tickets/{{ticketId}}/data",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tickets",
-                "{{ticketId}}",
-                "data"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Add Comment to Ticket",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "POST",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -243,22 +456,400 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"message\": \"ได้ทำการปิด-เปิดเครื่องใหม่แล้วยังใช้ไม่ได้ครับ\"\n}"
+              "raw": "{\n  \"status\": \"RESOLVED\",\n  \"note\": \"เปลี่ยนฟิวส์และสายไฟใหม่ ทดสอบใช้งานผ่านเรียบร้อย\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/tickets/{{ticketId}}/comments",
+              "raw": "{{baseUrl}}/api/tickets/{{ticketId}}/status",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "api",
+                "tickets",
+                "{{ticketId}}",
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Assign / Claim Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"claim\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketId}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tickets",
+                "{{ticketId}}",
+                "assign"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Transfer Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetDepartmentId\": \"{{departmentId}}\",\n  \"note\": \"ส่งต่อเคสให้ช่างเทคนิคตรวจสอบระบบไฟ\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketId}}/transfer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tickets",
+                "{{ticketId}}",
+                "transfer"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "description": "API สำหรับข้อคิดเห็น/แชทสนทนาประกอบตั๋วปัญหา",
+      "item": [
+        {
+          "name": "Add Comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    const id = json.data?.id || json.id;",
+                  "    if (id) pm.collectionVariables.set('commentId', id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"ได้นำเครื่องสำรองมาต่อใช้งานชั่วคราวแล้วครับ รบกวนช่างตรวจเช็คด้วยครับ\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketId}}/comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
                 "tickets",
                 "{{ticketId}}",
                 "comments"
               ]
             }
           }
+        },
+        {
+          "name": "Edit Comment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"ได้นำเครื่องสำรองมาต่อใช้งานชั่วคราวแล้วครับ (แก้ไข: ใช้เครื่องสำรองเบอร์ #04)\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketId}}/comments/{{commentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tickets",
+                "{{ticketId}}",
+                "comments",
+                "{{commentId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete / Unsend Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketId}}/comments/{{commentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tickets",
+                "{{ticketId}}",
+                "comments",
+                "{{commentId}}"
+              ]
+            }
+          }
         }
       ]
+    },
+    {
+      "name": "Notifications",
+      "description": "API สำหรับการแจ้งเตือนผู้ใช้งาน",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark As Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "read"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Upload",
+      "description": "API สำหรับการอัปโหลดไฟล์แนบและรูปภาพ",
+      "item": [
+        {
+          "name": "Upload File / Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "upload"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin & Analytics",
+      "description": "API สำหรับผู้ดูแลระบบ (Admin) และสถิติภาพรวม",
+      "item": [
+        {
+          "name": "Get Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/analytics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "analytics"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Webhooks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Discord Notification\",\n  \"url\": \"https://discord.com/api/webhooks/...\",\n  \"target_dept\": \"all\",\n  \"allow_private\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ticketId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "commentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "departmentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
     }
   ]
 }

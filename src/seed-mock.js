@@ -151,7 +151,7 @@ function randomInt(min, max) {
 }
 
 async function main() {
-  console.log('🚀 เริ่มต้นกระบวนการสร้างข้อมูลเสมือนจริง Pure ER-Diagram...');
+  console.log('🚀 เริ่มต้นกระบวนการสร้างข้อมูลเสมือนจริง (Realistic Seeding)...');
 
   // 1. Seed / Find Departments
   console.log('📦 1. ตรวจสอบและสร้างแผนก...');
@@ -183,6 +183,7 @@ async function main() {
     const username = `emp${String(i + 1).padStart(3, '0')}`;
     const email = `${username}@tickethub.com`;
     
+    // Assign Role: Index 0 is the single ADMIN, indices 1..11 are MANAGERs of different depts, rest are USERs
     let role = 'USER';
     let dept = deptList[i % deptList.length];
 
@@ -201,8 +202,8 @@ async function main() {
         name: fullName,
         password: hashedPassword,
         role,
-        dept_id: dept.dept_id,
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`
+        departmentId: dept.id,
+        avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`
       },
       create: {
         username,
@@ -210,16 +211,16 @@ async function main() {
         name: fullName,
         password: hashedPassword,
         role,
-        dept_id: dept.dept_id,
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`
+        departmentId: dept.id,
+        avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`
       }
     });
 
     users.push(user);
   }
 
-  const itUsers = users.filter(u => u.dept_id === deptMap['IT']?.dept_id);
-  const maintUsers = users.filter(u => u.dept_id === deptMap['MAINT']?.dept_id);
+  const itUsers = users.filter(u => u.departmentId === deptMap['IT']?.id);
+  const maintUsers = users.filter(u => u.departmentId === deptMap['MAINT']?.id);
   const managers = users.filter(u => u.role === 'MANAGER');
   const supportAgents = (itUsers.length > 0 || maintUsers.length > 0) ? [...itUsers, ...maintUsers] : users.filter(u => u.role !== 'USER');
 
@@ -239,18 +240,18 @@ async function main() {
       const ticketIndex = b + i + 1;
       const template = randomChoice(TICKET_TEMPLATES);
       const creator = randomChoice(users);
-      const srcDeptId = creator.dept_id;
+      const srcDeptId = creator.departmentId;
 
       // Status determination
       const randStatus = Math.random();
       let status = 'RESOLVED';
       if (randStatus < 0.08) status = 'NEW';
       else if (randStatus < 0.25) status = 'IN_PROGRESS';
-      else if (randStatus < 0.32) status = 'PENDING_APPROVAL';
-      else if (randStatus < 0.36) status = 'APPROVED';
-      else if (randStatus < 0.39) status = 'REJECTED';
-      else if (randStatus < 0.42) status = 'CANCELLED';
-      else status = 'RESOLVED';
+      else if (randStatus < 0.32) status = 'PENDING_APPROVAL'; // 7% pending approval
+      else if (randStatus < 0.36) status = 'APPROVED';         // 4% approved
+      else if (randStatus < 0.39) status = 'REJECTED';         // 3% rejected
+      else if (randStatus < 0.42) status = 'CANCELLED';        // 3% cancelled
+      else status = 'RESOLVED';                                // ~58% resolved
 
       // Dates
       const pastDays = randomInt(1, 90);
@@ -262,25 +263,26 @@ async function main() {
       let receiverManagerId = null;
       let tgtDeptId = null;
 
+      // Approval logic
       const isApprovalTicket = (status === 'PENDING_APPROVAL' || status === 'APPROVED' || status === 'REJECTED');
       
       if (isApprovalTicket || Math.random() < 0.15) {
-        const targetManagers = managers.filter(m => m.user_id !== creator.user_id);
+        const targetManagers = managers.filter(m => m.id !== creator.id);
         if (targetManagers.length > 0) {
-          receiverManagerId = randomChoice(targetManagers).user_id;
-          agentId = receiverManagerId;
+          receiverManagerId = randomChoice(targetManagers).id;
+          agentId = receiverManagerId; // Assign to manager for approval view
         }
       } else {
         const targetDepts = (template.category === 'HARDWARE' || template.category === 'SOFTWARE' || template.category === 'NETWORK') 
           ? [deptMap['IT']] 
           : [deptMap['MAINT'], deptMap['FAC'], deptMap['HR'], deptMap['PUR']];
         const chosenDept = randomChoice(targetDepts) || randomChoice(deptList);
-        tgtDeptId = chosenDept.dept_id;
+        tgtDeptId = chosenDept.id;
       }
 
       if (!isApprovalTicket && status !== 'NEW') {
         const potentialAgents = supportAgents.length > 0 ? supportAgents : users;
-        agentId = randomChoice(potentialAgents).user_id;
+        agentId = randomChoice(potentialAgents).id;
       }
 
       if (status === 'RESOLVED' || status === 'APPROVED') {
@@ -288,7 +290,7 @@ async function main() {
         resolvedAt = new Date(createdAt.getTime() + resolveHours * 60 * 60 * 1000);
       }
 
-      const hasAttachment = Math.random() < 0.45;
+      const hasAttachment = Math.random() < 0.45; // 45% have photo attachment
       const attachUrl = hasAttachment ? randomChoice(SAMPLE_IMAGES) : null;
 
       const ticket = await prisma.ticket.create({
@@ -299,101 +301,101 @@ async function main() {
           priority: template.priority,
           category: template.category,
           subcategory: template.sub,
-          sla_due_date: slaDueDate,
-          resolved_at: resolvedAt,
-          attach_url: attachUrl,
-          user_id: creator.user_id,
-          agent_id: agentId,
-          manager_id: receiverManagerId,
-          src_dept_id: srcDeptId,
-          tgt_dept_id: tgtDeptId,
-          created_at: createdAt,
-          updated_at: resolvedAt || new Date(createdAt.getTime() + 60 * 60 * 1000)
+          slaDueDate,
+          resolvedAt,
+          attachmentUrl: attachUrl,
+          userId: creator.id,
+          agentId,
+          receiverManagerId,
+          sourceDepartmentId: srcDeptId,
+          targetDepartmentId: tgtDeptId,
+          createdAt,
+          updatedAt: resolvedAt || new Date(createdAt.getTime() + 60 * 60 * 1000)
         }
       });
 
-      // 3.1 Attachment
+      // 3.1 If has attachment, create Attachment record
       if (attachUrl) {
         await prisma.attachment.create({
           data: {
-            file_name: `issue_photo_${ticketIndex}.jpg`,
-            file_type: 'image/jpeg',
-            file_url: attachUrl,
-            user_id: creator.user_id,
-            ticket_id: ticket.ticket_id,
-            created_at: createdAt
+            fileName: `issue_photo_${ticketIndex}.jpg`,
+            fileType: 'image/jpeg',
+            fileUrl: attachUrl,
+            userId: creator.id,
+            ticketId: ticket.id,
+            createdAt
           }
         });
       }
 
-      // 3.2 Comments
+      // 3.2 Create Chat Comments
       if (status === 'APPROVED') {
         await prisma.comment.create({
           data: {
-            ticket_id: ticket.ticket_id,
-            user_id: receiverManagerId || creator.user_id,
+            ticketId: ticket.id,
+            userId: receiverManagerId || creator.id,
             message: '🟢 ได้รับการอนุมัติเรียบร้อยแล้ว: ดำเนินการจัดสรรและสั่งซื้อตามระเบียบบริษัทได้เลยครับ',
-            created_at: new Date(createdAt.getTime() + 30 * 60 * 1000)
+            createdAt: new Date(createdAt.getTime() + 30 * 60 * 1000)
           }
         });
       } else if (status === 'REJECTED') {
         await prisma.comment.create({
           data: {
-            ticket_id: ticket.ticket_id,
-            user_id: receiverManagerId || creator.user_id,
+            ticketId: ticket.id,
+            userId: receiverManagerId || creator.id,
             message: '❌ ปฏิเสธคำขอ: ยังมีอุปกรณ์สำรองอยู่ในคลังส่วนกลาง ให้ติดต่อเบิกจากฝ่ายคลังก่อนครับ',
-            created_at: new Date(createdAt.getTime() + 30 * 60 * 1000)
+            createdAt: new Date(createdAt.getTime() + 30 * 60 * 1000)
           }
         });
       } else if (status === 'IN_PROGRESS' || status === 'RESOLVED') {
         const commentCount = randomInt(2, 4);
         for (let c = 0; c < commentCount; c++) {
           const isAgent = c % 2 === 1;
-          const commentUser = (isAgent && agentId) ? (users.find(u => u.user_id === agentId) || creator) : creator;
+          const commentUser = (isAgent && agentId) ? (users.find(u => u.id === agentId) || creator) : creator;
           const commentTime = new Date(createdAt.getTime() + (c + 1) * randomInt(15, 60) * 60 * 1000);
           const hasChatPic = (c === 0 && Math.random() < 0.25);
 
           await prisma.comment.create({
             data: {
-              ticket_id: ticket.ticket_id,
-              user_id: commentUser.user_id,
+              ticketId: ticket.id,
+              userId: commentUser.id,
               message: randomChoice(CHAT_RESPONSES),
-              attach_url: hasChatPic ? randomChoice(SAMPLE_IMAGES) : null,
-              created_at: commentTime,
-              updated_at: commentTime,
-              read_at: new Date(commentTime.getTime() + 5 * 60 * 1000)
+              attachmentUrl: hasChatPic ? randomChoice(SAMPLE_IMAGES) : null,
+              createdAt: commentTime,
+              updatedAt: commentTime,
+              readAt: new Date(commentTime.getTime() + 5 * 60 * 1000)
             }
           });
         }
       }
 
-      // 3.3 Transfers
+      // 3.3 Create Ticket Transfers for ~8% of tickets
       if (Math.random() < 0.08 && status !== 'NEW') {
-        const fromDept = deptMap['IT']?.dept_id || srcDeptId;
-        const toDept = deptMap['MAINT']?.dept_id || deptList[0].dept_id;
+        const fromDept = deptMap['IT']?.id || srcDeptId;
+        const toDept = deptMap['MAINT']?.id || deptList[0].id;
         await prisma.ticketTransfer.create({
           data: {
-            ticket_id: ticket.ticket_id,
-            from_dept_id: fromDept,
-            to_dept_id: toDept,
-            req_by_id: agentId || creator.user_id,
+            ticketId: ticket.id,
+            fromDepartmentId: fromDept,
+            toDepartmentId: toDept,
+            requestedById: agentId || creator.id,
             status: status === 'RESOLVED' ? 'COMPLETED' : 'PENDING',
             note: 'เนื่องจากตรวจสอบแล้วเป็นปัญหาเกี่ยวกับระบบสายไฟหลักของอาคาร จึงขอส่งต่อให้ทีมซ่อมบำรุงเข้าตรวจสอบต่อครับ',
-            created_at: new Date(createdAt.getTime() + 45 * 60 * 1000)
+            createdAt: new Date(createdAt.getTime() + 45 * 60 * 1000)
           }
         });
       }
 
-      // 3.4 Notifications
+      // 3.4 Create Notifications for recent tickets
       if (ticketIndex <= 80) {
         await prisma.notification.create({
           data: {
-            user_id: creator.user_id,
+            userId: creator.id,
             title: `ตั๋วของคุณ (#TK-${String(ticketIndex).padStart(5, '0')}) มีการอัปเดต`,
             message: status === 'RESOLVED' ? 'ตั๋วปัญหาของคุณได้รับการแก้ไขและปิดงานเรียบร้อยแล้ว' : 'เจ้าหน้าที่ได้รับเรื่องและกำลังดำเนินการ',
-            is_read: status === 'RESOLVED',
-            link: `/tickets?id=${ticket.ticket_id}`,
-            created_at: resolvedAt || createdAt
+            isRead: status === 'RESOLVED',
+            link: `/tickets?id=${ticket.id}`,
+            createdAt: resolvedAt || createdAt
           }
         });
       }
@@ -403,21 +405,21 @@ async function main() {
     console.log(`⏳ สร้างแล้ว ${createdCount} / ${TOTAL_TICKETS} ตั๋ว...`);
   }
 
-  // 4. Webhook
+  // 4. Webhook config
   await prisma.webhookConfig.upsert({
-    where: { webhook_id: 'webhook-discord-it' },
+    where: { id: 'webhook-discord-it' },
     update: {},
     create: {
-      webhook_id: 'webhook-discord-it',
+      id: 'webhook-discord-it',
       name: 'Discord IT Alert Channel',
       url: 'https://discord.com/api/webhooks/demo-channel-url',
-      target_dept: deptMap['IT']?.dept_id || 'all',
-      allow_private: true,
-      is_active: true
+      targetDepartment: deptMap['IT']?.id || 'all',
+      allowPrivateTickets: true,
+      isActive: true
     }
   });
 
-  console.log('🎉 ข้อมูลเสมือนจริง 1,680 ตั๋ว และ 60 ผู้ใช้งาน ถูกบันทึกลง Database Pure ER-Diagram เรียบร้อย 100%!');
+  console.log('🎉 ข้อมูลเสมือนจริง 1,680 ตั๋ว และ 60 ผู้ใช้งาน ถูกบันทึกลง Database เรียบร้อยสมบูรณ์ 100%!');
 }
 
 main()

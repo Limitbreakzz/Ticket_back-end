@@ -1,7 +1,4 @@
-/**
- * SLA Utility — Backend
- * ────────────────────
- */
+// SLA Utility — Backend
 
 const SLA_POLICY = {
   CRITICAL: { hours: 4,   label: '4 ชั่วโมง',    desc: 'วิกฤต! ต้องแก้ไขภายใน 4 ชม.' },

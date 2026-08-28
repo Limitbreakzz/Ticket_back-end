@@ -102,7 +102,7 @@ exports.testWebhook = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // --- Rate limit check ---
+    // Rate limit check
     const lastTestedAt = testRateLimitMap.get(id);
     if (lastTestedAt) {
       const elapsed = Date.now() - lastTestedAt;

@@ -6,7 +6,6 @@ const { hashPassword, verifyPassword } = require('../utils/password');
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
-
 exports.login = async (req, res) => {
   const { username, password } = req.body;
   let normalizedUsername = username ? username.trim().toLowerCase() : 'unknown';

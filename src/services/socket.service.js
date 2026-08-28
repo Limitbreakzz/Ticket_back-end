@@ -151,8 +151,7 @@ exports.getIO = () => {
   return io;
 };
 
-// --- Emitting Helper Functions (Targeted Event Delivery) ---
-
+// Emitting Helper Functions (Targeted Event Delivery)
 exports.emitToUser = (userId, event, data) => {
   if (!io) return;
   io.to(`user:${userId}`).emit(event, { version: "1.0", payload: data });

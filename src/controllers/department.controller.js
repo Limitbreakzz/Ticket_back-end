@@ -55,7 +55,7 @@ exports.getDepartments = async (req, res) => {
 
               if (dept) {
                 dept = await prisma.department.update({
-                  where: { id: dept.id },
+                  where: { dept_id: dept.dept_id },
                   data: { name, code }
                 });
               } else {

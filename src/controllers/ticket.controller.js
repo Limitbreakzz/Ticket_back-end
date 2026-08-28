@@ -275,8 +275,8 @@ exports.createTicket = async (req, res) => {
       try {
         const prismaInstance = require('../prisma');
         await prismaInstance.attachment.updateMany({
-          where: { fileUrl: attachmentUrl },
-          data: { ticketId: ticket.id }
+          where: { file_url: attachmentUrl },
+          data: { ticket_id: ticket.id }
         });
       } catch (err) {
         console.error("Failed to link attachment:", err);
@@ -728,8 +728,8 @@ exports.addComment = async (req, res) => {
       try {
         const prismaInstance = require('../prisma');
         await prismaInstance.attachment.updateMany({
-          where: { fileUrl: attachmentUrl },
-          data: { ticketId }
+          where: { file_url: attachmentUrl },
+          data: { ticket_id: ticketId }
         });
       } catch (err) {
         console.error("Failed to link comment attachment:", err);

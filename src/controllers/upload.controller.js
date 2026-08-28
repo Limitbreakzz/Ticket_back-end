@@ -44,10 +44,10 @@ exports.uploadFile = async (req, res) => {
     // Save metadata to Attachment table
     const attachment = await prisma.attachment.create({
       data: {
-        fileName: req.file.originalname,
-        fileType: req.file.mimetype,
-        fileUrl: fileUrl,
-        userId: user ? user.id : null
+        file_name: req.file.originalname,
+        file_type: req.file.mimetype,
+        file_url: fileUrl,
+        user_id: user ? (user.user_id || user.id) : null
       }
     });
 
@@ -55,9 +55,10 @@ exports.uploadFile = async (req, res) => {
       status: "success",
       message: "File uploaded successfully",
       data: {
-        id: attachment.id,
+        id: attachment.attach_id,
+        attach_id: attachment.attach_id,
         filename: req.file.filename,
-        originalName: attachment.fileName,
+        originalName: attachment.file_name,
         url: fileUrl
       }
     });

@@ -22,7 +22,7 @@ exports.upsertExternalUser = async (username, email, name, role, departmentName)
         }
       });
     }
-    departmentId = dept.id;
+    departmentId = dept.dept_id;
   }
 
   let user = await prisma.user.findUnique({
@@ -37,13 +37,13 @@ exports.upsertExternalUser = async (username, email, name, role, departmentName)
 
   if (user) {
     return await prisma.user.update({
-      where: { id: user.id },
+      where: { user_id: user.user_id },
       data: {
         username,
         email,
         name,
         role,
-        departmentId
+        dept_id: departmentId
       },
       include: { department: true }
     });
@@ -54,7 +54,7 @@ exports.upsertExternalUser = async (username, email, name, role, departmentName)
         email,
         name,
         role,
-        departmentId
+        dept_id: departmentId
       },
       include: { department: true }
     });

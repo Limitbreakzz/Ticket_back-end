@@ -104,20 +104,23 @@ exports.login = async (req, res) => {
       }
     }
 
-    const tokenPayload = { userId: user.id, role: user.role };
+    const tokenPayload = { userId: user.user_id, role: user.role };
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
     const responseData = {
       token,
       user: {
-        id: user.id,
+        id: user.user_id,
+        user_id: user.user_id,
         email: user.email,
         username: user.username,
         name: user.name,
         role: user.role,
-        avatarUrl: user.avatarUrl,
+        avatarUrl: user.avatar_url,
+        avatar_url: user.avatar_url,
         department: user.department ? {
-          id: user.department.id,
+          id: user.department.dept_id,
+          dept_id: user.department.dept_id,
           name: user.department.name,
           code: user.department.code
         } : null
@@ -157,13 +160,20 @@ exports.me = async (req, res) => {
       status: "success",
       message: "Profile retrieved successfully",
       data: {
-        id: req.user.id,
+        id: req.user.user_id,
+        user_id: req.user.user_id,
         email: req.user.email,
         username: req.user.username,
         name: req.user.name,
         role: req.user.role,
-        avatarUrl: req.user.avatarUrl,
-        department: req.user.department
+        avatarUrl: req.user.avatar_url,
+        avatar_url: req.user.avatar_url,
+        department: req.user.department ? {
+          id: req.user.department.dept_id,
+          dept_id: req.user.department.dept_id,
+          name: req.user.department.name,
+          code: req.user.department.code
+        } : null
       }
     });
   } catch (error) {
@@ -178,7 +188,7 @@ exports.me = async (req, res) => {
 exports.updateMe = async (req, res) => {
   try {
     const user = req.user;
-    const { name, avatarUrl } = req.body;
+    const { name, avatarUrl, avatar_url } = req.body;
 
     if (!name) {
       return res.status(400).json({
@@ -187,21 +197,28 @@ exports.updateMe = async (req, res) => {
       });
     }
 
-    const updateData = { name, avatarUrl };
+    const updateData = { name, avatar_url: avatar_url || avatarUrl };
 
-    const updatedUser = await userService.updateUser(user.id, updateData);
+    const updatedUser = await userService.updateUser(user.user_id, updateData);
 
     res.json({
       status: "success",
       message: "อัปเดตข้อมูลโปรไฟล์เรียบร้อยแล้ว",
       data: {
-        id: updatedUser.id,
+        id: updatedUser.user_id,
+        user_id: updatedUser.user_id,
         email: updatedUser.email,
         username: updatedUser.username,
         name: updatedUser.name,
         role: updatedUser.role,
-        avatarUrl: updatedUser.avatarUrl,
-        department: updatedUser.department
+        avatarUrl: updatedUser.avatar_url,
+        avatar_url: updatedUser.avatar_url,
+        department: updatedUser.department ? {
+          id: updatedUser.department.dept_id,
+          dept_id: updatedUser.department.dept_id,
+          name: updatedUser.department.name,
+          code: updatedUser.department.code
+        } : null
       }
     });
   } catch (error) {

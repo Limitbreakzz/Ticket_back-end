@@ -715,9 +715,9 @@ exports.addComment = async (req, res) => {
               title: "💬 ผู้แจ้งตอบกลับใน Ticket ที่คุณดูแล",
               message: `${user.name} ได้แสดงความคิดเห็นใน Ticket "${ticket.title}"`,
               link: `/tickets/${ticketRefId}`,
-            });
+            }).catch(e => console.error("Notification agent error:", e));
           } else if (ticketTgtDeptId) {
-            const targetDeptUsers = await userService.findUsersByDepartmentId(ticketTgtDeptId);
+            const targetDeptUsers = await userService.findUsersByDepartmentId(ticketTgtDeptId).catch(() => []);
             for (const targetUser of targetDeptUsers) {
               const targetUserId = targetUser.user_id || targetUser.id;
               if (targetUserId !== currentUserId) {
@@ -726,18 +726,18 @@ exports.addComment = async (req, res) => {
                   title: "💬 มีข้อความตอบกลับใน Ticket ใหม่",
                   message: `${user.name} ได้แสดงความคิดเห็นใน Ticket "${ticket.title}"`,
                   link: `/tickets/${ticketRefId}`,
-                });
+                }).catch(e => console.error("Notification dept error:", e));
               }
             }
           }
         } else {
-          if (ticketOwnerId !== currentUserId) {
+          if (ticketOwnerId && ticketOwnerId !== currentUserId) {
             await notificationService.createNotification({
               userId: ticketOwnerId,
               title: "💬 มีข้อความตอบกลับใน Ticket ของคุณ",
               message: `${user.name} ได้ตอบกลับ Ticket "${ticket.title}" ของคุณ`,
               link: `/tickets/${ticketRefId}`,
-            });
+            }).catch(e => console.error("Notification owner error:", e));
           }
         }
       }
@@ -747,16 +747,16 @@ exports.addComment = async (req, res) => {
 
     // Webhook: only TICKET_CREATED is sent — no webhook for comments
 
-    res.json({
+    return res.json({
       status: "success",
       message: "Comment added successfully",
       data: comment
     });
   } catch (error) {
     console.error("Error adding comment:", error);
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
-      message: "Internal server error"
+      message: error.message || "Internal server error"
     });
   }
 };

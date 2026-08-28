@@ -11,21 +11,7 @@ app.get('/',
   controller.getAllTickets
 );
 
-app.get('/:id',
-  // #swagger.tags = ['tickets']
-  // #swagger.description = 'ดึงข้อมูลตั๋วปัญหาตาม ID'
-  requireAuth,
-  controller.getTicketById
-);
-
-app.post('/',
-  // #swagger.tags = ['tickets']
-  // #swagger.description = 'สร้างตั๋วปัญหาใหม่'
-  requireAuth,
-  controller.createTicket
-);
-
-// Ticket metrics endpoints
+// Ticket metrics endpoints (Must be declared before /:id to avoid express matching "pending-count" as :id)
 app.get('/pending-count',
   // #swagger.tags = ['tickets']
   // #swagger.description = 'ดึงจำนวนตั๋วปัญหาที่อยู่ระหว่างรอการดำเนินการ'
@@ -38,6 +24,20 @@ app.get('/outbox-count',
   // #swagger.description = 'ดึงจำนวนตั๋วปัญหาขาออกของผู้ใช้ปัจจุบัน'
   requireAuth,
   controller.getOutboxCount
+);
+
+app.post('/',
+  // #swagger.tags = ['tickets']
+  // #swagger.description = 'สร้างตั๋วปัญหาใหม่'
+  requireAuth,
+  controller.createTicket
+);
+
+app.get('/:id',
+  // #swagger.tags = ['tickets']
+  // #swagger.description = 'ดึงข้อมูลตั๋วปัญหาตาม ID'
+  requireAuth,
+  controller.getTicketById
 );
 
 // Ticket details and communications

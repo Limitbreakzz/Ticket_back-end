@@ -31,7 +31,15 @@ const authMiddleware = async (req, res, next) => {
       include: { department: true }
     });
 
-    req.user = user;
+    if (user) {
+      req.user = {
+        ...user,
+        id: user.user_id,
+        departmentId: user.dept_id,
+      };
+    } else {
+      req.user = null;
+    }
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);

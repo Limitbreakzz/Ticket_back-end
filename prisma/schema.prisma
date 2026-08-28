@@ -47,34 +47,32 @@ enum TransferStatus {
 }
 
 model Department {
-  id        String   @id @default(uuid()) @map("dept_id")
-  name      String   @unique
-  code      String   @unique
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  dept_id    String   @id @default(uuid())
+  name       String   @unique
+  code       String   @unique
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   users          User[]
   sourceTickets  Ticket[]         @relation("TicketSourceDepartment")
   targetTickets  Ticket[]         @relation("TicketTargetDepartment")
   transfersFrom  TicketTransfer[] @relation("TransferFromDepartment")
   transfersTo    TicketTransfer[] @relation("TransferToDepartment")
-
-  @@map("Department")
 }
 
 model User {
-  id           String   @id @default(uuid()) @map("user_id")
-  email        String   @unique
-  username     String?  @unique
-  name         String
-  password     String?
-  role         Role     @default(USER)
-  avatarUrl    String?  @db.LongText @map("avatar_url")
-  departmentId String?  @map("dept_id")
-  createdAt    DateTime @default(now()) @map("created_at")
+  user_id    String   @id @default(uuid())
+  email      String   @unique
+  username   String?  @unique
+  name       String
+  password   String?
+  role       Role     @default(USER)
+  avatar_url String?  @db.LongText
+  dept_id    String?
+  created_at DateTime @default(now())
 
-  department             Department?      @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  department             Department?      @relation(fields: [dept_id], references: [dept_id], onDelete: SetNull)
   ticketsCreated         Ticket[]         @relation("UserTickets")
   ticketsAssigned        Ticket[]         @relation("AgentTickets")
   ticketsReceivedManager Ticket[]         @relation("ReceiverManagerTickets")
@@ -82,36 +80,33 @@ model User {
   transfersCreated       TicketTransfer[] @relation("TransferRequestedBy")
   notifications          Notification[]
   attachments            Attachment[]
-
-  @@map("User")
 }
 
 model Ticket {
-  id                 String         @id @default(uuid()) @map("ticket_id")
-  title              String
-  description        String         @db.Text
-  status             TicketStatus   @default(NEW)
-  priority           TicketPriority @default(MEDIUM)
-  category           TicketCategory
-  subcategory        String?
-  slaDueDate         DateTime?      @map("sla_due_date")
-  resolvedAt         DateTime?      @map("resolved_at")
-  attachmentUrl      String?        @db.LongText @map("attach_url")
-  userId             String         @map("user_id")
-  agentId            String?        @map("agent_id")
-  receiverManagerId  String?        @map("manager_id")
-  sourceDepartmentId String?        @map("src_dept_id")
-  targetDepartmentId String?        @map("tgt_dept_id")
+  ticket_id    String         @id @default(uuid())
+  title        String
+  description  String         @db.Text
+  status       TicketStatus   @default(NEW)
+  priority     TicketPriority @default(MEDIUM)
+  category     TicketCategory
+  subcategory  String?
+  sla_due_date DateTime?
+  resolved_at  DateTime?
+  attach_url   String?        @db.LongText
+  user_id      String
+  agent_id     String?
+  manager_id   String?
+  src_dept_id  String?
+  tgt_dept_id  String?
+  created_at   DateTime       @default(now())
+  updated_at   DateTime       @updatedAt
 
-  user            User        @relation("UserTickets", fields: [userId], references: [id])
-  agent           User?       @relation("AgentTickets", fields: [agentId], references: [id])
-  receiverManager User?       @relation("ReceiverManagerTickets", fields: [receiverManagerId], references: [id], onDelete: SetNull)
+  user            User        @relation("UserTickets", fields: [user_id], references: [user_id])
+  agent           User?       @relation("AgentTickets", fields: [agent_id], references: [user_id])
+  receiverManager User?       @relation("ReceiverManagerTickets", fields: [manager_id], references: [user_id], onDelete: SetNull)
 
-  sourceDepartment Department? @relation("TicketSourceDepartment", fields: [sourceDepartmentId], references: [id], onDelete: SetNull)
-  targetDepartment Department? @relation("TicketTargetDepartment", fields: [targetDepartmentId], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  sourceDepartment Department? @relation("TicketSourceDepartment", fields: [src_dept_id], references: [dept_id], onDelete: SetNull)
+  targetDepartment Department? @relation("TicketTargetDepartment", fields: [tgt_dept_id], references: [dept_id], onDelete: SetNull)
 
   comments    Comment[]
   transfers   TicketTransfer[]
@@ -119,89 +114,78 @@ model Ticket {
 
   @@index([status])
   @@index([priority])
-  @@index([userId])
-  @@index([agentId])
-  @@index([createdAt])
-  @@index([sourceDepartmentId])
-  @@index([targetDepartmentId])
-  @@index([receiverManagerId])
-  @@map("Ticket")
+  @@index([user_id])
+  @@index([agent_id])
+  @@index([created_at])
+  @@index([src_dept_id])
+  @@index([tgt_dept_id])
+  @@index([manager_id])
 }
 
 model TicketTransfer {
-  id               String         @id @default(uuid()) @map("transfer_id")
-  ticketId         String         @map("ticket_id")
-  fromDepartmentId String?        @map("from_dept_id")
-  toDepartmentId   String?        @map("to_dept_id")
-  requestedById    String         @map("req_by_id")
-  status           TransferStatus @default(PENDING)
-  note             String?        @db.Text
-  createdAt        DateTime       @default(now()) @map("created_at")
-  updatedAt        DateTime       @updatedAt @map("updated_at")
+  transfer_id   String         @id @default(uuid())
+  ticket_id     String
+  from_dept_id  String?
+  to_dept_id    String?
+  req_by_id     String
+  status        TransferStatus @default(PENDING)
+  note          String?        @db.Text
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
 
-  ticket         Ticket      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  fromDepartment Department? @relation("TransferFromDepartment", fields: [fromDepartmentId], references: [id], onDelete: SetNull)
-  toDepartment   Department? @relation("TransferToDepartment", fields: [toDepartmentId], references: [id], onDelete: SetNull)
-  requestedBy    User        @relation("TransferRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
-
-  @@map("TicketTransfer")
+  ticket         Ticket      @relation(fields: [ticket_id], references: [ticket_id], onDelete: Cascade)
+  fromDepartment Department? @relation("TransferFromDepartment", fields: [from_dept_id], references: [dept_id], onDelete: SetNull)
+  toDepartment   Department? @relation("TransferToDepartment", fields: [to_dept_id], references: [dept_id], onDelete: SetNull)
+  requestedBy    User        @relation("TransferRequestedBy", fields: [req_by_id], references: [user_id], onDelete: Cascade)
 }
 
 model Comment {
-  id            String    @id @default(uuid()) @map("comment_id")
-  ticketId      String    @map("ticket_id")
-  userId        String    @map("user_id")
-  message       String    @db.Text
-  attachmentUrl String?   @db.LongText @map("attach_url")
-  isEdited      Boolean   @default(false) @map("is_edited")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime? @updatedAt @map("updated_at")
-  readAt        DateTime? @map("read_at")
+  comment_id String    @id @default(uuid())
+  ticket_id  String
+  user_id    String
+  message    String    @db.Text
+  attach_url String?   @db.LongText
+  is_edited  Boolean   @default(false)
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  read_at    DateTime?
 
-  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id])
-
-  @@map("Comment")
+  ticket Ticket @relation(fields: [ticket_id], references: [ticket_id], onDelete: Cascade)
+  user   User   @relation(fields: [user_id], references: [user_id])
 }
 
 model WebhookConfig {
-  id                  String   @id @default(uuid()) @map("webhook_id")
-  name                String
-  url                 String
-  targetDepartment    String   @default("all") @map("target_dept")
-  allowPrivateTickets Boolean  @default(false) @map("allow_private")
-  isActive            Boolean  @default(true) @map("is_active")
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at")
-
-  @@map("WebhookConfig")
+  webhook_id    String   @id @default(uuid())
+  name          String
+  url           String
+  target_dept   String   @default("all")
+  allow_private Boolean  @default(false)
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @default(now()) @updatedAt
 }
 
 model Notification {
-  id        String   @id @default(uuid()) @map("notify_id")
-  userId    String   @map("user_id")
-  title     String
-  message   String   @db.Text
-  isRead    Boolean  @default(false) @map("is_read")
-  link      String?
-  createdAt DateTime @default(now()) @map("created_at")
+  notify_id  String   @id @default(uuid())
+  user_id    String
+  title      String
+  message    String   @db.Text
+  is_read    Boolean  @default(false)
+  link       String?
+  created_at DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("Notification")
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 }
 
 model Attachment {
-  id        String   @id @default(uuid()) @map("attach_id")
-  fileName  String   @map("file_name")
-  fileType  String   @map("file_type")
-  fileUrl   String   @db.LongText @map("file_url")
-  userId    String?  @map("user_id")
-  ticketId  String?  @map("ticket_id")
-  createdAt DateTime @default(now()) @map("created_at")
+  attach_id  String   @id @default(uuid())
+  file_name  String
+  file_type  String
+  file_url   String   @db.LongText
+  user_id    String?
+  ticket_id  String?
+  created_at DateTime @default(now())
 
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-  ticket Ticket? @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-
-  @@map("Attachment")
+  user   User?   @relation(fields: [user_id], references: [user_id], onDelete: SetNull)
+  ticket Ticket? @relation(fields: [ticket_id], references: [ticket_id], onDelete: Cascade)
 }

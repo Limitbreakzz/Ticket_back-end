@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "start": "nodemon src/index.js",
+    "start": "node src/index.js",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio"
   },

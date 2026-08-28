@@ -84,12 +84,15 @@ exports.init = (server) => {
       logSocketEvent(userId, socket.id, ipAddress, `department:${deptCode}`, 'join_dept_room');
     }
 
-    // Room Authorization Guard for Joining Ticket Rooms
-    socket.on('join_ticket', async (ticketId, callback) => {
-      if (typeof callback !== 'function') return;
+    // Room Authorization Guard for Joining Ticket Rooms (supports both 'join_ticket' and 'joinRoom')
+    const handleJoinTicketRoom = async (roomOrId, callback) => {
+      const ticketId = typeof roomOrId === 'string' && roomOrId.startsWith('ticket:') 
+        ? roomOrId.replace('ticket:', '') 
+        : roomOrId;
 
       if (checkRateLimit(socket.id)) {
-        return callback({ status: 'error', message: 'Rate limit exceeded' });
+        if (typeof callback === 'function') callback({ status: 'error', message: 'Rate limit exceeded' });
+        return;
       }
 
       try {
@@ -98,7 +101,8 @@ exports.init = (server) => {
         });
 
         if (!ticket) {
-          return callback({ status: 'error', message: 'Ticket not found' });
+          if (typeof callback === 'function') callback({ status: 'error', message: 'Ticket not found' });
+          return;
         }
 
         // Auth check: Creator, Assigned Agent, Target Manager, Staff (Admin/Manager), or Target Department Member
@@ -111,21 +115,30 @@ exports.init = (server) => {
         if (isCreator || isAgent || isReceiver || isStaff || isTargetDept) {
           socket.join(`ticket:${ticketId}`);
           logSocketEvent(userId, socket.id, ipAddress, `ticket:${ticketId}`, 'join_room');
-          callback({ status: 'ok' });
+          if (typeof callback === 'function') callback({ status: 'ok' });
         } else {
           logSocketEvent(userId, socket.id, ipAddress, `ticket:${ticketId}`, 'join_room_denied');
-          callback({ status: 'error', message: 'Unauthorized access to this ticket room' });
+          if (typeof callback === 'function') callback({ status: 'error', message: 'Unauthorized access to this ticket room' });
         }
       } catch (err) {
         console.error('join_ticket error:', err);
-        callback({ status: 'error', message: 'Internal server error' });
+        if (typeof callback === 'function') callback({ status: 'error', message: 'Internal server error' });
       }
-    });
+    };
 
-    socket.on('leave_ticket', (ticketId) => {
+    socket.on('join_ticket', handleJoinTicketRoom);
+    socket.on('joinRoom', handleJoinTicketRoom);
+
+    const handleLeaveTicketRoom = (roomOrId) => {
+      const ticketId = typeof roomOrId === 'string' && roomOrId.startsWith('ticket:') 
+        ? roomOrId.replace('ticket:', '') 
+        : roomOrId;
       socket.leave(`ticket:${ticketId}`);
       logSocketEvent(userId, socket.id, ipAddress, `ticket:${ticketId}`, 'leave_room');
-    });
+    };
+
+    socket.on('leave_ticket', handleLeaveTicketRoom);
+    socket.on('leaveRoom', handleLeaveTicketRoom);
 
     socket.on('disconnect', () => {
       rateLimits.delete(socket.id);

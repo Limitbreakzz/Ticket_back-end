@@ -203,5 +203,5 @@ model Attachment {
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   ticket Ticket? @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
-  @@map("Attchment")
+  @@map("Attachment")
 }

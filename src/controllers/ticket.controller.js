@@ -566,30 +566,7 @@ exports.getTicketChatUpdates = async (req, res) => {
     const user = req.user;
     const ticketId = req.params.id;
 
-    const ticket = await prisma.ticket.findUnique({
-      where: { id: ticketId },
-      select: {
-        id: true,
-        userId: true,
-        agentId: true,
-        status: true,
-        sourceDepartmentId: true,
-        targetDepartmentId: true,
-        receiverManagerId: true,
-        agent: {
-          select: {
-            name: true,
-            avatarUrl: true
-          }
-        },
-        targetDepartment: {
-          select: {
-            name: true,
-            code: true
-          }
-        }
-      }
-    });
+    const ticket = await ticketService.findTicketByIdWithRelations(ticketId);
 
     if (!ticket) {
       return res.status(404).json({
@@ -623,20 +600,7 @@ exports.getTicketChatUpdates = async (req, res) => {
       });
     }
 
-    const comments = await prisma.comment.findMany({
-      where: { ticketId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            role: true,
-            avatarUrl: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "asc" },
-    });
+    const comments = await ticketService.getCommentsByTicketId(ticketId);
 
     res.json({
       status: "success",
@@ -738,34 +702,41 @@ exports.addComment = async (req, res) => {
 
     try {
       if (ticket) {
-        if (user.id === ticket.userId) {
-          if (ticket.agentId && ticket.agentId !== user.id) {
-            await createNotification({
-              userId: ticket.agentId,
+        const currentUserId = user.user_id || user.id;
+        const ticketOwnerId = ticket.user_id || ticket.userId;
+        const ticketAgentId = ticket.agent_id || ticket.agentId;
+        const ticketTgtDeptId = ticket.tgt_dept_id || ticket.targetDepartmentId;
+        const ticketRefId = ticket.ticket_id || ticket.id;
+
+        if (currentUserId === ticketOwnerId) {
+          if (ticketAgentId && ticketAgentId !== currentUserId) {
+            await notificationService.createNotification({
+              userId: ticketAgentId,
               title: "💬 ผู้แจ้งตอบกลับใน Ticket ที่คุณดูแล",
               message: `${user.name} ได้แสดงความคิดเห็นใน Ticket "${ticket.title}"`,
-              link: `/tickets/${ticket.id}`,
+              link: `/tickets/${ticketRefId}`,
             });
-          } else if (ticket.targetDepartmentId) {
-            const targetDeptUsers = await userService.findUsersByDepartmentId(ticket.targetDepartmentId);
+          } else if (ticketTgtDeptId) {
+            const targetDeptUsers = await userService.findUsersByDepartmentId(ticketTgtDeptId);
             for (const targetUser of targetDeptUsers) {
-              if (targetUser.id !== user.id) {
-                await createNotification({
-                  userId: targetUser.id,
+              const targetUserId = targetUser.user_id || targetUser.id;
+              if (targetUserId !== currentUserId) {
+                await notificationService.createNotification({
+                  userId: targetUserId,
                   title: "💬 มีข้อความตอบกลับใน Ticket ใหม่",
                   message: `${user.name} ได้แสดงความคิดเห็นใน Ticket "${ticket.title}"`,
-                  link: `/tickets/${ticket.id}`,
+                  link: `/tickets/${ticketRefId}`,
                 });
               }
             }
           }
         } else {
-          if (ticket.userId !== user.id) {
-            await createNotification({
-              userId: ticket.userId,
+          if (ticketOwnerId !== currentUserId) {
+            await notificationService.createNotification({
+              userId: ticketOwnerId,
               title: "💬 มีข้อความตอบกลับใน Ticket ของคุณ",
               message: `${user.name} ได้ตอบกลับ Ticket "${ticket.title}" ของคุณ`,
-              link: `/tickets/${ticket.id}`,
+              link: `/tickets/${ticketRefId}`,
             });
           }
         }

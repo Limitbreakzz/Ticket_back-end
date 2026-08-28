@@ -318,7 +318,7 @@ exports.deleteUser = async (req, res) => {
 exports.getAnalytics = async (req, res) => {
   try {
     const isManager = req.user && req.user.role === 'MANAGER';
-    const deptId = isManager ? req.user.departmentId : null;
+    const deptId = isManager ? (req.user.dept_id || req.user.departmentId) : null;
 
     const summary = await ticketService.getAnalyticsSummary(deptId);
     const { statusCounts, priorityCounts, categoryCounts, deptCounts } = await ticketService.getAnalyticsGroupedData(deptId);
@@ -326,31 +326,34 @@ exports.getAnalytics = async (req, res) => {
     const departments = await departmentService.getActiveDepartments();
     const deptMap = {};
     departments.forEach(d => {
-      deptMap[d.id] = d.name;
+      deptMap[d.dept_id || d.id] = d.name;
     });
 
     const statusData = statusCounts.map(item => ({
       status: item.status,
-      count: item._count.id
+      count: item._count.ticket_id || item._count.id || 0
     }));
 
     const priorityData = priorityCounts.map(item => ({
       priority: item.priority,
-      count: item._count.id
+      count: item._count.ticket_id || item._count.id || 0
     }));
 
     const categoryData = categoryCounts.map(item => ({
       category: item.category,
-      count: item._count.id
+      count: item._count.ticket_id || item._count.id || 0
     }));
 
     const departmentData = deptCounts
-      .filter(item => item.targetDepartmentId && deptMap[item.targetDepartmentId])
-      .map(item => ({
-        departmentId: item.targetDepartmentId,
-        departmentName: deptMap[item.targetDepartmentId],
-        count: item._count.id
-      }))
+      .filter(item => (item.tgt_dept_id || item.targetDepartmentId) && deptMap[item.tgt_dept_id || item.targetDepartmentId])
+      .map(item => {
+        const targetId = item.tgt_dept_id || item.targetDepartmentId;
+        return {
+          departmentId: targetId,
+          departmentName: deptMap[targetId],
+          count: item._count.ticket_id || item._count.id || 0
+        };
+      })
       .sort((a, b) => b.count - a.count);
 
     res.json({

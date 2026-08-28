@@ -1354,7 +1354,7 @@ exports.editComment = async (req, res) => {
     }
 
     const comment = await prisma.comment.findUnique({
-      where: { id: commentId }
+      where: { comment_id: commentId }
     });
 
     if (!comment) {
@@ -1364,7 +1364,8 @@ exports.editComment = async (req, res) => {
       });
     }
 
-    if (comment.userId !== user.id) {
+    const currentUserId = user.user_id || user.id;
+    if (comment.user_id !== currentUserId) {
       return res.status(403).json({
         status: "error",
         message: "คุณไม่มีสิทธิ์แก้ไขข้อความนี้"
@@ -1379,20 +1380,41 @@ exports.editComment = async (req, res) => {
       });
     }
 
-    const updatedComment = await prisma.comment.update({
-      where: { id: commentId },
-      data: { message: trimmedMsg, isEdited: true },
+    const rawUpdated = await prisma.comment.update({
+      where: { comment_id: commentId },
+      data: { message: trimmedMsg, is_edited: true },
       include: {
         user: {
           select: {
-            id: true,
+            user_id: true,
             name: true,
             role: true,
-            avatarUrl: true,
+            avatar_url: true,
           }
         }
       }
     });
+
+    const updatedComment = {
+      ...rawUpdated,
+      id: rawUpdated.comment_id,
+      comment_id: rawUpdated.comment_id,
+      ticketId: rawUpdated.ticket_id,
+      ticket_id: rawUpdated.ticket_id,
+      userId: rawUpdated.user_id,
+      user_id: rawUpdated.user_id,
+      isEdited: rawUpdated.is_edited,
+      is_edited: rawUpdated.is_edited,
+      attachmentUrl: rawUpdated.attach_url,
+      attach_url: rawUpdated.attach_url,
+      createdAt: rawUpdated.created_at,
+      created_at: rawUpdated.created_at,
+      user: rawUpdated.user ? {
+        ...rawUpdated.user,
+        id: rawUpdated.user.user_id,
+        avatarUrl: rawUpdated.user.avatar_url
+      } : null
+    };
 
     socketService.emitToTicket(updatedComment.ticketId, 'comment:updated', updatedComment);
 
@@ -1416,7 +1438,7 @@ exports.deleteComment = async (req, res) => {
     const { commentId } = req.params;
 
     const comment = await prisma.comment.findUnique({
-      where: { id: commentId }
+      where: { comment_id: commentId }
     });
 
     if (!comment) {
@@ -1426,7 +1448,8 @@ exports.deleteComment = async (req, res) => {
       });
     }
 
-    if (comment.userId !== user.id) {
+    const currentUserId = user.user_id || user.id;
+    if (comment.user_id !== currentUserId) {
       return res.status(403).json({
         status: "error",
         message: "คุณไม่มีสิทธิ์ยกเลิกการส่งข้อความนี้"
@@ -1442,14 +1465,14 @@ exports.deleteComment = async (req, res) => {
     }
 
     await prisma.comment.update({
-      where: { id: commentId },
+      where: { comment_id: commentId },
       data: {
         message: "ยกเลิกการส่งข้อความแล้ว",
-        attachmentUrl: null
+        attach_url: null
       }
     });
 
-    socketService.emitToTicket(comment.ticketId, 'comment:deleted', { ticketId: comment.ticketId, commentId });
+    socketService.emitToTicket(comment.ticket_id, 'comment:deleted', { ticketId: comment.ticket_id, commentId });
 
     res.json({
       status: "success",
